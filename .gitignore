@@ -1,5 +1,7 @@
 .vscode/
 .idea/
+.test.py
+cheat-sheet.md
 
 build/
 dist/
@@ -11,8 +13,8 @@ dist/
 *.pyo
 *.pyd
 
-.venv/
-.env/
+**/.venv/
+**/.env/
 
 *.log
 *.tmp
