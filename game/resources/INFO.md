@@ -8,16 +8,15 @@ Ce dossier contient uniquement des images
 ---
 
 ## Nommage et architecture des fichiers
-- Nommer vos ficher en suivant la forme `nom-du-fichier.extension` par exemple pour le bouton pour lancer le jeu `PlayIcon.png`
-- Donner des noms clairs
-- S'il s'agit d'une icon suivez la forme `nom-du-fichier.extension` 
+- Nommer vos ficher en suivant la forme `nom-du-fichier.extension` par exemple pour le personnage `minecraft-pig.png`
+- Donner des noms clairs et organiser bien les images, les icons dans `resources/icons` et les autres images dans `resources/pictures`
 - Privilégiez les images sans fond comme avec les `.png`  ( les `.svg` ne sont pas pris en charge il me semble)
-- Si vous avez plusieurs images du meme type par exemple pour `character-1`, il y a une image ou il est debout et une autre mort alors vous aurez :
+- Si vous avez plusieurs images du meme type par exemple pour `minecraft-pig`, il y a une image ou il est inactif et une autre en train de marcher alors vous aurez :
 ```
 pictures
-    |__character-1
-    |            |__standing.png
-    |            |__dead.png
+    |__minecraft-pig
+    |            |__idle.png
+    |            |__walk.png
     |__...
 ```
 - Tout est pareil pour les sons. Priviligiez les sons avec les extensions `.mp3` ou `.wav`

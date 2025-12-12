@@ -34,28 +34,35 @@ PageManager.load("menu")
 ## `resource.py`
 ##### Sert à importer les images/sons
 ###### Avant chaque utilisation de il faut l'importer une fois tout en haut du fichier avec `from game.manager.resource import resourceManager`
-- Pour les images il faut faire par exemple `character1 = resourceManager.picture("character-1_standing_png")` pour un fichier se trouvant dans :
+- Pour les images il faut faire par exemple `minecraftPig = resourceManager.picture("minecraft-pig/idle")` pour un fichier se trouvant dans :
 ```
 resources
     |__pictures
-            |__character-1
-            |       |__standing.png
+            |__minecraft-pig
+            |       |__idle.png
             |       |__...
             |__...
 ```
-- Pour les sounds effects il faut faire par exemple `deathEffet = resourceManager.sound("souds-effects_death_mp3")` pour un fichier se trouvant dans :
+- Pour les icons il faut faire par exemple `homeIcon = resourceManager.icon("home")` pour un fichier se trouvant dans :
 ```
 resources
-    |__audio
+    |__icons
+        |__home.png
+        |__...     
+```
+- Pour les sounds effects il faut faire par exemple `deathEffet = resourceManager.effect("death")` pour un fichier se trouvant dans :
+```
+resources
+    |__sounds
             |__effects
             |       |__death.mp3
             |       |__...
             |__...
 ```
-- Pour les musique il faut faire par exemple `music = resourceManager.sound("music_main_mp3")` pour un fichier se trouvant dans :
+- Pour les musique il faut faire par exemple `mainMusic = resourceManager.music("main")` pour un fichier se trouvant dans :
 ```
 resources
-    |__audio
+    |__sounds
             |__music
             |   |__main.mp3
             |   |__...
