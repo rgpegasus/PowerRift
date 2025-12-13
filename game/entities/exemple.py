@@ -39,6 +39,7 @@ class Exemple(Entity):
         self.was_right = True
         self.was_left = False
         self.physics = Physics(self)
+
     def update(self):
         self.move()
         self.physics.update()
@@ -47,15 +48,15 @@ class Exemple(Entity):
     def move(self):
         moving = False
         if (self.currentAnim == self.animAttackLeft or self.animAttackRight) and self.currentAnim.end:
-            self.physics.is_attacking = not self.currentAnim.end
+            self.physics.is_attacking = False
         if inputManager.click("attack") and int(self.physics.velocity_y) == 0 :
             if self.currentAnim != self.animAttackLeft and self.was_left:
-                self.physics.is_attacking = not self.currentAnim.end
+                self.physics.is_attacking = True
                 self.currentAnim = self.animAttackLeft
                 self.texture_offset = (0 / 8, 0)
                 self.currentAnim.play()
             elif self.currentAnim != self.animAttackRight and self.was_right:
-                self.physics.is_attacking = not self.currentAnim.end
+                self.physics.is_attacking = True
                 self.currentAnim = self.animAttackRight
                 self.texture_offset = (0 / 8, 0)
                 self.currentAnim.play()

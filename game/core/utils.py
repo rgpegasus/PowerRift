@@ -25,7 +25,8 @@ class Animation:
         self.entity.texture = self.texture
         self.frame_index = 0
         self.timer = 0
-        self.is_playing_once = True  
+        self.is_playing_once = True 
+        self.end = False 
 
     def update(self):
         self.timer += time.dt
@@ -34,7 +35,6 @@ class Animation:
             if self.is_playing_once:
                 if self.frame_index < self.number_frames - 1:
                     self.frame_index += 1
-                    self.end = False
                 else:
                     self.end = True
                     return 
