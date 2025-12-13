@@ -1,55 +1,45 @@
-# Charge tous les fichiers dans game/resources/** et les classe selon leur type.
+# Permet d'importer le bon fichier facilement
 import os
 from ursina import load_texture, Audio
 
-
 class ResourceManager:
-    def __init__(self, base_path="../resources"):
+    def __init__(self, base_path="game/resources"):
         self.base_path = base_path
 
-        self.pictures = {}
-        self.sounds = {}
-        self.musics = {}
-
-        self.load_all()
-
-    def load_all(self):
-        for root, dirs, files in os.walk(self.base_path):
-            for file in files:
-                path = os.path.join(root, file).replace("\\", "/")
-                if (path.find("sounds-effects") != -1) :
-                    # SOUNDS
-                    index = path.find("sounds-effects")
-                    key = path[:index-1] + path[index+14:] \
-                        .replace(self.base_path + "/", "") \
-                        .replace("/", "_") \
-                        .replace(".", "_")
-                    self.sounds[key] = path 
-                elif (path.find("music") != -1) :
-                    # MUSICS
-                    index = path.find("music") 
-                    key = path[:index-1] + path[index+5:] \
-                        .replace(self.base_path + "/", "") \
-                        .replace("/", "_") \
-                        .replace(".", "_")
-                    self.musics[key] = path
-                else :
-                    # PICTURES
-                    key = path \
-                        .replace(self.base_path + "/", "") \
-                        .replace("/", "_") \
-                        .replace(".", "_")
-                    self.pictures[key] = load_texture(path)
-                    
-
     def picture(self, key):
-        return self.pictures.get(key, None)
-
-    def sound(self, key):
-        return Audio(self.sounds.get(key), autoplay=False)
+        folder_path = os.path.join(self.base_path, "pictures", os.path.dirname(key)).replace("\\", "/")
+        file_name = os.path.basename(key)
+        if os.path.exists(folder_path):
+            for file in os.listdir(folder_path):
+                if os.path.splitext(file)[0] == file_name:
+                    return load_texture(os.path.join(folder_path, file).replace("\\", "/"))
+        return None
+    
+    def icon(self, key):
+        folder_path = os.path.join(self.base_path, "icons", os.path.dirname(key)).replace("\\", "/")
+        file_name = os.path.basename(key)
+        if os.path.exists(folder_path):
+            for file in os.listdir(folder_path):
+                if os.path.splitext(file)[0] == file_name:
+                    return load_texture(os.path.join(folder_path, file).replace("\\", "/"))
+        return None
+    
+    def effect(self, key):
+        folder_path = os.path.join(self.base_path, "sounds/effects", os.path.dirname(key)).replace("\\", "/")
+        file_name = os.path.basename(key)
+        if os.path.exists(folder_path):
+            for file in os.listdir(folder_path):
+                if os.path.splitext(file)[0] == file_name:
+                    return Audio(os.path.join(folder_path, file).replace("\\", "/"), autoplay=False)
+        return None
 
     def music(self, key, volume=0.5):
-        return Audio(self.musics.get(key), loop=True, volume=volume)
-
-
+        folder_path = os.path.join(self.base_path, "sounds/music", os.path.dirname(key)).replace("\\", "/")
+        file_name = os.path.basename(key)
+        if os.path.exists(folder_path):
+            for file in os.listdir(folder_path):
+                if os.path.splitext(file)[0] == file_name:
+                    return Audio(os.path.join(folder_path, file).replace("\\", "/"), loop=True, volume=volume)
+        return None
+    
 resourceManager = ResourceManager()
