@@ -26,6 +26,7 @@
     ```bash
     .venv\Scripts\activate
     ```
+> *If this command doesn't work, use `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` and try again*
 
 - **Linux / Mac:**
     ```bash
