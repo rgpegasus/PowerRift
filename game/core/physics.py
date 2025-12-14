@@ -23,6 +23,7 @@ class Physics:
         self.switch_right = False
         self.switch_left = False
         self.jump_side = 0
+        
     def collision_x(self, move_x):
         player = self.player
         player.x += move_x
@@ -98,26 +99,29 @@ class Physics:
                     entity = hit_info.entity
                     if entity.name == "solid":
                         if move_x>0:
+                            self.jump_smoke.isJumping("left", self.jump_side >= 9)
                             self.jump_left = True
                             self.jump_right = False
                             self.switch_left = True
                             self.switch_right = False
                         elif move_x < 0:
+                            self.jump_smoke.isJumping("right", self.jump_side >= 9)
                             self.jump_right = True
                             self.jump_left = False
                             self.switch_right = True
                             self.switch_left = False
-                    self.remaining_jump = max(2,min(9 - self.jump_side, Variables.MAX_JUMP))
+
+                    self.remaining_jump = max(1,min(10 - self.jump_side, Variables.MAX_JUMP))
                 elif self.jump_left or self.jump_right :
-                    if 9 - self.jump_side < Variables.MAX_JUMP:
-                        self.remaining_jump = max(1, 9 - self.jump_side)
+                    if 10 - self.jump_side < Variables.MAX_JUMP:
+                        self.remaining_jump = max(0, 10 - self.jump_side)
             if self.remaining_jump > 0 :
-                self.jump_smoke.isJumping()
+                if not self.jump_left and not self.jump_right:
+                    self.jump_smoke.isJumping("down")
                 self.velocity_y = self.jump_force
                 self.remaining_jump -= 1
                 self.jump_start_y = player.y
                 self.mid_jump = False
-            # print(self.remaining_jump)
                 
 
         if self.velocity_y < 0 and (self.jump_left or self.jump_right):

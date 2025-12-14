@@ -49,15 +49,32 @@ class JumpSmoke(Entity):
         super().__init__(
             model="quad", 
             texture= smoke,
+            z=-1,
             **kwargs
         )
         self.visible = False
         self.scale=1
         self.player = player
         self.animSmoke = Animation(self, smoke, 10)
-    def isJumping(self):
+
+    def isJumping(self, direction = "down", max = False):
         self.visible = True
-        self.position = (self.player.x, self.player.y - (self.player.scale_x*self.player.scale_val[1]/2)+self.scale_y/2)
+        if max:
+            self.color = color.red
+        else:
+            self.color = color.white
+        player_scale_x = self.player.scale_x*self.player.scale_val[0]/2
+        player_scale_y = self.player.scale_y*self.player.scale_val[1]/2
+        if direction == "down":
+            self.position = (self.player.x, self.player.y - player_scale_y + self.scale_y/2)
+            self.rotation = (0,0,0)
+        elif direction == "left":
+            self.position = (self.player.x + player_scale_x - self.scale_y/2 , self.player.y - player_scale_y + self.scale_y/2)
+            self.rotation = (0,0,-90)
+        elif direction == "right":
+            self.position = (self.player.x - player_scale_x + self.scale_y/2 , self.player.y - player_scale_y + self.scale_y/2)
+            self.rotation = (0,0,90)
+
         self.animSmoke.play()
     def update(self):
         self.animSmoke.update() 
