@@ -15,13 +15,14 @@ class Physics:
         self.jump_start_y = 0
         self.mid_jump = False
         self.slow_jump = 1
-        self.nb_jump = 0
+        self.remaining_jump = Variables.MAX_JUMP
         self.velocity_y = 0
         self.jump_smoke = JumpSmoke(self.player)
         self.speed = Variables.PLAYER_SPEED * self.player.speed_variation
         self.is_attacking = False
         self.switch_right = False
         self.switch_left = False
+        self.jump_side = 0
     def collision_x(self, move_x):
         player = self.player
         player.x += move_x
@@ -67,7 +68,8 @@ class Physics:
                         top_entity = entity.y + entity.scale_y/2
                         player.y = top_entity + player.scale_val[1] * player.scale_y/2 + 0.001
                         self.velocity_y = 0
-                        self.nb_jump = 0 
+                        self.remaining_jump = Variables.MAX_JUMP
+                        self.jump_side = 0
         else:
             if move_y > 0 and self.crossing :
                 self.crossing=False
@@ -78,11 +80,11 @@ class Physics:
         if inputManager.pressed("get off") :
             self.isGet_off = True
             
-    
     def jump(self):
         player = self.player
         player_x = player.x
         if inputManager.click("jump"):
+            self.jump_side += 1
             for i in range(2):
                 move_x = 0
                 if i == 0:
@@ -93,7 +95,6 @@ class Physics:
                 hit_info = player.intersects()
                 player.x = player_x
                 if hit_info.hit :
-                    self.nb_jump = 0
                     entity = hit_info.entity
                     if entity.name == "solid":
                         if move_x>0:
@@ -106,12 +107,19 @@ class Physics:
                             self.jump_left = False
                             self.switch_right = True
                             self.switch_left = False
-            if self.nb_jump < 3:
+                    self.remaining_jump = max(2,min(9 - self.jump_side, Variables.MAX_JUMP))
+                elif self.jump_left or self.jump_right :
+                    if 9 - self.jump_side < Variables.MAX_JUMP:
+                        self.remaining_jump = max(1, 9 - self.jump_side)
+            if self.remaining_jump > 0 :
                 self.jump_smoke.isJumping()
                 self.velocity_y = self.jump_force
-                self.nb_jump += 1
+                self.remaining_jump -= 1
                 self.jump_start_y = player.y
                 self.mid_jump = False
+            # print(self.remaining_jump)
+                
+
         if self.velocity_y < 0 and (self.jump_left or self.jump_right):
             self.slow_jump -= self.slow_jump * time.dt * 2
             self.slow_jump = max(0.05, self.slow_jump)

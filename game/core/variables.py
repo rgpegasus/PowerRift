@@ -8,4 +8,5 @@ class Variables:
     PLAYER_SPEED = 6
     GRAVITY = 20
     JUMP_FORCE = 10
+    MAX_JUMP = 3
 
