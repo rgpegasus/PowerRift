@@ -6,6 +6,7 @@ from game.core.utils import JumpSmoke
 class Physics:
     def __init__(self, player):
         self.player = player
+        self.player
         self.gravity = Variables.GRAVITY
         self.jump_force = Variables.JUMP_FORCE
         self.isGet_off = False
@@ -23,6 +24,7 @@ class Physics:
         self.switch_right = False
         self.switch_left = False
         self.jump_side = 0
+        self.can_move = True
         
     def collision_x(self, move_x):
         player = self.player
@@ -58,7 +60,7 @@ class Physics:
             if move_y > 0 :
                 if entity.name == "solid":   
                     bottom_entity = entity.y - entity.scale_y/2
-                    player.y = bottom_entity - player.scale_val[1] * player.scale_y/2 - 0.001
+                    player.y = bottom_entity - player.scale_val[1] * player.scale_y/2 - 0.001 - player.collider.center[1] * player.scale_y
                     self.velocity_y = 0
                 else:  
                     self.crossing = True
@@ -67,7 +69,7 @@ class Physics:
                 for entity in entities:
                     if entity.name == 'solid' or not self.isGet_off and not self.crossing:
                         top_entity = entity.y + entity.scale_y/2
-                        player.y = top_entity + player.scale_val[1] * player.scale_y/2 + 0.001
+                        player.y = top_entity + player.scale_val[1] * player.scale_y/2 + 0.001 - player.collider.center[1] * player.scale_y
                         self.velocity_y = 0
                         self.remaining_jump = Variables.MAX_JUMP
                         self.jump_side = 0
@@ -137,7 +139,7 @@ class Physics:
         if self.velocity_y < 0:
             self.velocity_y = max(self.velocity_y, -25)
         move_x = 0
-        if not self.is_attacking :
+        if self.can_move :
             if inputManager.pressed("left") and (self.mid_jump or not self.jump_right) or self.jump_left :
                 if inputManager.pressed("left") and self.mid_jump:
                     self.jump_left = False
