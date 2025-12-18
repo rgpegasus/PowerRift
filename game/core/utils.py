@@ -2,7 +2,7 @@
 from ursina import *
 from game.manager.resource import resourceManager
 class Animation:
-    def __init__(self, entity, texture, nbf, fps=10):
+    def __init__(self, entity, texture, nbf, fps=10, direction = 1):
         self.entity = entity
         self.texture = texture
         self.number_frames = nbf
@@ -12,18 +12,21 @@ class Animation:
         self.entity.texture_offset = (0 / self.number_frames, 0)
         self.is_playing_once = False  
         self.end = False
+        self.direction = direction
 
     def loop(self):
-        self.entity.texture_scale = (1/self.number_frames, 1)
-        self.entity.texture = self.texture
+        self.entity.texture_scale = (self.direction/self.number_frames, 1)
         self.frame_index = 0
+        self.entity.texture = self.texture
+        self.texture_offset = (0 / self.number_frames, 0)
         self.timer = 0
         self.is_playing_once = False 
 
     def play(self):
-        self.entity.texture_scale = (1/self.number_frames, 1)
-        self.entity.texture = self.texture
+        self.entity.texture_scale = (self.direction/self.number_frames, 1)
         self.frame_index = 0
+        self.texture_offset = (0 / self.number_frames, 0)
+        self.entity.texture = self.texture
         self.timer = 0
         self.is_playing_once = True 
         self.end = False 
@@ -37,9 +40,10 @@ class Animation:
                     self.frame_index += 1
                 else:
                     self.end = True
-                    return 
+                    return
             else:
                 self.frame_index = (self.frame_index + 1) % self.number_frames
+
 
             self.entity.texture_offset = (self.frame_index / self.number_frames, 0)
 
@@ -64,7 +68,7 @@ class JumpSmoke(Entity):
         else:
             self.color = color.white
         player_scale_x = self.player.scale_x*self.player.scale_val[0]/2
-        player_scale_y = self.player.scale_y*self.player.scale_val[1]/2
+        player_scale_y = self.player.scale_y*self.player.scale_val[1]/2 - self.player.collider.center[1] * self.player.scale_y
         if direction == "down":
             self.position = (self.player.x, self.player.y - player_scale_y + self.scale_y/2)
             self.rotation = (0,0,0)
