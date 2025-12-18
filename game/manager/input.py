@@ -1,27 +1,28 @@
 from ursina import mouse, held_keys
 import keyboard
-
 class InputManager:
     def __init__(self):
         self.key = {
             "left": "q",
             "right": "d",
+            "up": "z",
             "get off": "s",
-            "crouch": "left ctrl",
+            "defend": "right mouse",
             "jump": "space",
             "attack": "left mouse",
             "play": "p"
         }
-
-        self.prev_state = {}
         self.gamepad = {
             "left": ["gamepad dpad left"],
             "right": ["gamepad dpad right"],
+            "up": ["gamepad dpad up"],
             "get off": ["gamepad dpad down"],
+            "defend": ["gamepad x"],
             "jump": ["gamepad a"],
             "attack": ["gamepad b"],
             "play": ["gamepad start"]
         }
+        self.prev_state = {}
 
     def pressed(self, action):
         key = self.key.get(action)
@@ -43,6 +44,8 @@ class InputManager:
             return held_keys.get("gamepad left stick x", 0) < -0.5
         elif action == "right":
             return held_keys.get("gamepad left stick x", 0) > 0.5
+        elif action == "up":
+            return held_keys.get("gamepad left stick y", 0) > 0.5
         elif action == "get off":
             return held_keys.get("gamepad left stick y", 0) < -0.5
         
@@ -69,6 +72,8 @@ class InputManager:
                 current = held_keys.get("gamepad left stick x", 0) < -0.5
             elif action == "right":
                 current = held_keys.get("gamepad left stick x", 0) > 0.5
+            elif action == "up":
+                return held_keys.get("gamepad left stick y", 0) > 0.5
             elif action == "get off":
                 current = held_keys.get("gamepad left stick y", 0) < -0.5
 
@@ -83,6 +88,12 @@ class InputManager:
         self.prev_state[action] = current
 
         return clicked
+    
+    def combo_pressed(self, actions):
+        for action in actions:
+            if not self.pressed(action):
+                return False
+        return True
 
 
 inputManager = InputManager()

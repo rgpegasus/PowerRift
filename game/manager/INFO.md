@@ -11,13 +11,25 @@ L'objectif des fonctions manager est de simplifier l'import et l'utilisation de 
 ##### Sert a relier une touche a une action
 ###### Avant chaque utilisation de il faut l'importer une fois tout en haut du fichier avec `from game.manager.input import inputManager`
 - La fonction renvoie `True` ou `False` en fonction de si l'action existe ou non. Les noms visiblent dans `InputManager()` ne sont qu'a titre indicati. Par exemple `q` qui correspond a `left` peut etre setup de sorte que sa amène le joueur a sauter. Mais l'idéal est de garder la même action tout le long
-- Pour l'utiliser il faut faire `inputManager.pressed("action")`. Le plus simple est de faire une condition `if`. Par exemple :
+- Pour l'utiliser il faut faire `inputManager.type("action")`. Le plus simple est de faire une condition `if`. Par exemple :
 
 ```py
 if inputManager.pressed("left"):
     print("aller a gauche")
 ```
-> Ce code va juste afficher "aller a gauche" quand la touche q est préssée
+> Ce code va afficher "aller a gauche" tant que la touche q est préssée
+
+```py
+if inputManager.click("attack"):
+    print("attaquer")
+```
+> Ce code va afficher "attaquer" une unique fois lorsque que le clique gauche de la souris est préssé
+
+```py
+if inputManager.combo_pressed([["up", "attack"]):
+    print("attaquer vers le haut")
+```
+> Ce code va afficher "attaquer vers le haut" tant que le clique gauche de la souris ainsi que la touche z sont préssés en même temps
 
 ---
 
