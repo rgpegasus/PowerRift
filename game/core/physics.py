@@ -16,13 +16,12 @@ class Physics:
         self.jump_start_y = 0
         self.mid_jump = False
         self.slow_jump = 1
-        self.remaining_jump = Variables.MAX_JUMP
+        self.remaining_jump = Variables.MAX_JUMP 
         self.velocity_y = 0
         self.jump_smoke = JumpSmoke(self.player)
-        self.speed = Variables.PLAYER_SPEED * self.player.speed_variation
+        self.speed = Variables.PLAYER_SPEED
         self.is_attacking = False
-        self.switch_right = False
-        self.switch_left = False
+        self.switch_facing = ""
         self.jump_side = 0
         self.can_move = True
         
@@ -52,10 +51,12 @@ class Physics:
         hit_info = player.intersects()
         if hit_info.hit :
             entity = hit_info.entity
+            if self.isGet_off and entity.name != "solid":
+                player.animManager.jump("JumpTransition")
+            
             self.jump_right = False
             self.jump_left = False
-            self.switch_left = False
-            self.switch_right = False
+            self.switch_facing = ""
             self.slow_jump = 1
             if move_y > 0 :
                 if entity.name == "solid":   
@@ -73,7 +74,13 @@ class Physics:
                         self.velocity_y = 0
                         self.remaining_jump = Variables.MAX_JUMP
                         self.jump_side = 0
+            if any(anim in player.animManager.animations and player.currentAnim == player.animManager.animations[anim][player.facing] for anim in ["JumpStart", "JumpTransition", "JumpEnd"]) and ((not self.isGet_off and not self.crossing) or entity.name == "solid"):
+                player.animManager.play("Idle", "loop")
         else:
+            if "JumpStart" in player.animManager.animations and int(self.velocity_y) == 0 and player.currentAnim == player.animManager.animations["JumpStart"][player.facing] :
+                player.animManager.jump("JumpTransition")
+            elif "WallSlide" in player.animManager.animations and int(self.velocity_y) < 0 and player.currentAnim != player.animManager.animations["WallSlide"][player.facing] :
+                player.animManager.jump("JumpEnd")
             if move_y > 0 and self.crossing :
                 self.crossing=False
             self.isGet_off = False
@@ -88,12 +95,13 @@ class Physics:
         player_x = player.x
         if inputManager.click("jump"):
             self.jump_side += 1
+            compte = 0
             for i in range(2):
                 move_x = 0
                 if i == 0:
-                    move_x -= self.speed * time.dt
+                    move_x -= self.speed * self.player.speed_variation * time.dt
                 else:
-                    move_x += self.speed * time.dt
+                    move_x += self.speed * self.player.speed_variation * time.dt
                 player.x += move_x
                 hit_info = player.intersects()
                 player.x = player_x
@@ -104,19 +112,21 @@ class Physics:
                             self.jump_smoke.isJumping("left", self.jump_side >= 9)
                             self.jump_left = True
                             self.jump_right = False
-                            self.switch_left = True
-                            self.switch_right = False
+                            self.switch_facing = "left"
                         elif move_x < 0:
                             self.jump_smoke.isJumping("right", self.jump_side >= 9)
                             self.jump_right = True
                             self.jump_left = False
-                            self.switch_right = True
-                            self.switch_left = False
-
+                            self.switch_facing = "right"
+                        player.animManager.jump("WallJump")
                     self.remaining_jump = max(1,min(10 - self.jump_side, Variables.MAX_JUMP))
                 elif self.jump_left or self.jump_right :
                     if 10 - self.jump_side < Variables.MAX_JUMP:
                         self.remaining_jump = max(0, 10 - self.jump_side)
+                if not hit_info:
+                    compte+=1
+            if compte == 2:
+                player.animManager.jump("JumpStart")
             if self.remaining_jump > 0 :
                 if not self.jump_left and not self.jump_right:
                     self.jump_smoke.isJumping("down")
@@ -124,8 +134,20 @@ class Physics:
                 self.remaining_jump -= 1
                 self.jump_start_y = player.y
                 self.mid_jump = False
-                
-
+        else:   
+            if self.velocity_y < 0:    
+                for i in range(2):
+                    move_x = 0
+                    if i == 0:
+                        move_x -= self.speed * self.player.speed_variation * time.dt
+                    else:
+                        move_x += self.speed * self.player.speed_variation * time.dt
+                    player.x += move_x
+                    hit_info = player.intersects()
+                    player.x = player_x
+                    if hit_info.hit and hit_info.entity.name  == "solid":
+                        if "WallSlide" in player.animManager.animations and player.currentAnim != player.animManager.animations["WallSlide"][player.facing] :
+                            player.animManager.jump("WallSlide")
         if self.velocity_y < 0 and (self.jump_left or self.jump_right):
             self.slow_jump -= self.slow_jump * time.dt * 2
             self.slow_jump = max(0.05, self.slow_jump)
@@ -144,14 +166,14 @@ class Physics:
                 if inputManager.pressed("left") and self.mid_jump:
                     self.jump_left = False
                     self.jump_right = False
-                    self.switch_right = False
-                move_x -= self.speed * time.dt * self.slow_jump
+                    self.switch_facing = ""
+                move_x -= self.speed * self.player.speed_variation * time.dt * self.slow_jump
             if inputManager.pressed("right") and (self.mid_jump or not self.jump_left) or self.jump_right :
                 if inputManager.pressed("right") and self.mid_jump:
                     self.jump_right = False
                     self.jump_left = False
-                    self.switch_left = False
-                move_x += self.speed * time.dt * self.slow_jump
+                    self.switch_facing = ""
+                move_x += self.speed * self.player.speed_variation * time.dt * self.slow_jump
         self.get_off()
         self.collision_x(move_x)
         if self.velocity_y > 0 and not self.mid_jump:

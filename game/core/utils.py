@@ -13,6 +13,10 @@ class Animation:
         self.is_playing_once = False  
         self.end = False
         self.direction = direction
+        if self.direction == 1:
+            self.facing = "right"
+        else:
+            self.facing = "left"
 
     def loop(self):
         self.entity.texture_scale = (self.direction/self.number_frames, 1)
@@ -35,6 +39,10 @@ class Animation:
         self.timer += time.dt
         if self.timer >= 1/self.fps:
             self.timer = 0
+            if self.entity.facing != self.facing:
+                self.facing = self.entity.facing
+                self.direction*=-1
+                self.entity.texture_scale = (self.direction/self.number_frames, 1)
             if self.is_playing_once:
                 if self.frame_index < self.number_frames - 1:
                     self.frame_index += 1
@@ -47,7 +55,7 @@ class Animation:
 
             self.entity.texture_offset = (self.frame_index / self.number_frames, 0)
 
-smoke = resourceManager.picture("knight/jump/smoke")
+smoke = resourceManager.picture("smoke")
 class JumpSmoke(Entity):
     def __init__(self, player, **kwargs):
         super().__init__(
@@ -59,6 +67,7 @@ class JumpSmoke(Entity):
         self.visible = False
         self.scale=1
         self.player = player
+        self.facing = "right"
         self.animSmoke = Animation(self, smoke, 10)
 
     def isJumping(self, direction = "down", max = False):

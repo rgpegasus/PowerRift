@@ -1,12 +1,13 @@
 from ursina import *
 from game.entities.demon import Demon
+from game.entities.kenzo import Kenzo
 from game.manager.resource import resourceManager
 backgroundMap = resourceManager.picture("background/map/test")
 
 class Scene(Entity):
     def __init__(self):
         super().__init__()
-        self.player = Demon( scale=(0.6, 0.75), position=(-2, 10))
+        self.player = Kenzo( scale=(0.6, 0.75), position=(0, 10))
         self.background = Entity(z=2, model='quad', texture=backgroundMap, scale= (30, 15), position=(0, 0))
         self.ground = Entity(z=-1, name="solid", collider='box', model='quad', color= "#2a2f26", scale=(8.25, 2.5), position=(0.25, -2.25))
         self.plat_left = Entity(z=-1, name="solid", collider='box', model='quad', color='#2f2629', scale=(1.5, 3), position=(-5.5, 1.5))
@@ -17,11 +18,7 @@ class Scene(Entity):
         
         camera.orthographic = True
         camera.fov = 10
-
-        self.mainMusic = resourceManager.music("main")
-        if self.mainMusic:
-            self.mainMusic.play()
-
+        
     def update(self):
         if self.player.x > -5 and self.player.x < 5:
             camera.x = self.player.x
