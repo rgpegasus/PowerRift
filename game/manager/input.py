@@ -6,18 +6,22 @@ class InputManager:
             "left": "q",
             "right": "d",
             "up": "z",
+            "dash": "shift",
             "get off": "s",
+            "interact": "e",
             "defend": "right mouse",
             "jump": "space",
             "attack": "left mouse",
             "play": "p"
-        }
+        } 
         self.gamepad = {
             "left": ["gamepad dpad left"],
             "right": ["gamepad dpad right"],
             "up": ["gamepad dpad up"],
-            "get off": ["gamepad dpad down"],
-            "defend": ["gamepad x"],
+            "dash": ["gamepad leftstick press", "gamepad leftshoulder"],
+            "get off": ["gamepad leftstick down"],
+            "interact": ["gamepad y"],
+            "defend": ["gamepad rightshoulder"],
             "jump": ["gamepad a"],
             "attack": ["gamepad b"],
             "play": ["gamepad start"]
@@ -92,6 +96,11 @@ class InputManager:
     def combo_pressed(self, actions):
         for action in actions:
             if not self.pressed(action):
+                return False
+        return True
+    def no_input(self):
+        for action in self.key:
+            if self.pressed(action):
                 return False
         return True
 
