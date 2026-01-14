@@ -17,3 +17,15 @@ class Scene(Entity):
             scale_y = 0.035, 
             on_click=lambda: PageManager.load("test")
         )
+
+#C'est Ilyan ! Pour celui qui fait les menus, il peut inclure ça dans son code pour le relier au mien (le networking) :
+
+
+#from game.network.manager import network_manager # Importe le networking
+
+#def on_host_button_click():
+    #network_manager.start_host() # Quand t'appui sur le bouton host
+
+#def on_join_button_click():
+    #ip = input_field.text
+    #network_manager.join_server(ip) # Quan dt'appuie sur le bouton "rejoindre"
