@@ -2,22 +2,31 @@ from ursina import *
 from game.entities.demon import Demon
 from game.entities.kenzo import Kenzo
 from game.manager.resource import resourceManager
-backgroundMap = resourceManager.picture("background/map/test")
+backgroundMap = resourceManager.picture("background/map/background")
+platformMap = resourceManager.picture("background/map/platform")
 
 class Scene(Entity):
     def __init__(self):
         super().__init__()
-        self.player = Kenzo( scale=(0.6, 0.75), position=(0, 10))
+        # Entity(name="solid", position=(0,0), model=Mesh(vertices=[(0,0,0),(0.5,0.5,0),(0.5,1,0),(0,1,0)], triangles=[(0,1,2),(0,2,3)], mode='triangle', z=-1,  collider='box', visible=False))
         self.background = Entity(z=2, model='quad', texture=backgroundMap, scale= (30, 15), position=(0, 0))
-        self.ground = Entity(z=-1, name="solid", collider='box', model='quad', color= "#2a2f26", scale=(8.25, 2.5), position=(0.25, -2.25))
-        self.plat_left = Entity(z=-1, name="solid", collider='box', model='quad', color='#2f2629', scale=(1.5, 3), position=(-5.5, 1.5))
-        self.plat_topr = Entity(z=-1, name="solid",collider='box', model='quad', color='#2f2629', scale=(2.75, 0.65), position=(2.25, 1.5))
-        self.plat_topm = Entity(z=1, name="platform", collider='box', model='quad', color="#636226", scale=(1.74, 0.15), position=(0, 1.75))
-        self.plat_topl = Entity(z=-1, name="solid",collider='box', model='quad', color='#2f2629', scale=(2.75, 0.65), position=(-2.25, 1.5))
-        self.plat_right = Entity(z=-1, name="solid", collider='box', model='quad', color="#2f2629", scale=(2, 1.5), position=(6, 3.5))
+        self.platformMap = Entity(z=1.5, model='quad', texture=platformMap, scale= (20, 12), position=(0, 0))
         
+        self.ground1 = Entity(z=-1, name="solid", collider='box', model='quad', color= "#2a2f26", visible=False,scale=(4.65, 1.75), position=(-3.25, -3.15))
+        self.ground2 = Entity(z=-1, name="solid", collider='box', model='quad', color= "#2a2f26", visible=False,scale=(4.3, 1.75), position=(4.45, -3.15))
+        self.ground3 = Entity(z=-1, name="platform", collider='box', model='quad', color= "#636226", visible=False,scale=(3.24, 0.65), position=(0.69, -2.6))
+        self.plat_left = Entity(z=-1, name="solid", collider='box', model='quad', color='#2f2629', visible=False, scale=(2.2, 3), position=(-6.4, 2.2))
+        # self.plat_left = Entity(z=-1, name="solid", model=Mesh(vertices=[(-1.1, -2.5, 0),( 1.1, -0.5, 0),( 1.1,  2.5, 0),(-1.1,  2.5, 0)], triangles=[(0,1,2),(0,2,3)], mode='triangle'),  collider='mesh', visible=False, position=(-6.4, 1.2))
+        self.plat_topr = Entity(z=-1, name="solid",collider='box', model='quad', color='#2f2629', visible=False, scale=(6.4, 1), position=(0, 1.7))
+        self.plat_topm = Entity(z=1, name="platform", collider='box', model='quad', color="#636226", visible=False, scale=(2.1, 0.65), position=(-4.25, 1.9))
+        self.plat_right = Entity(z=-1, name="solid", collider='box', model='quad', color="#2f2629", visible=False, scale=(2.8, 1.15), position=(6.05, 3.9))
+        self.player = Kenzo( scale=(0.6, 0.75), position=(0, 15))
         camera.orthographic = True
         camera.fov = 10
+        
+
+        # self.plat_left.color = Color(0.39, 0.38, 0.15, 0.5)
+
         
     def update(self):
         if self.player.x > -5 and self.player.x < 5:
