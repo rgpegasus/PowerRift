@@ -6,6 +6,7 @@ from game.manager.animation import AnimationManager
 
 
 Idle = resourceManager.picture("demon/idle/basic")
+
 number_frames = {
     "Idle" : 6,
     "Run" : 8,
@@ -22,28 +23,54 @@ number_frames = {
 
 
 class Demon(Entity):
-    def __init__(self,**kwargs):
+    def __init__(self, type = "player", facing = "right", team = [], enemy = [],**kwargs):
         super().__init__(
             model="quad", 
-            name="player",
+            name=type,
             texture= Idle,
             **kwargs
         )
         
-        self.scale_val = (0.18,0.475)
-        self.scale=2.5
-        self.collider = BoxCollider(self, size=Vec3(self.scale_val[0], self.scale_val[1], 1), center=(0, -0.15, 0))
-
+        self.scale_val = (0.18,0.45)
+        self.scale=2.6
+        self.collider = BoxCollider(self, size=Vec3(self.scale_val[0], self.scale_val[1], 1), center=(0, -0.16, 0))
+        self.collider.visible = False
         self.speed_variation = 1
+        self.hp = 100
+        self.hp_ui = Text(
+            text=str(int(self.hp)),
+            parent=self,
+            position=(0, 0.1, 0),
+            scale=4,
+            color=color.black
+        )
+        self.team = team
+        self.enemy = enemy
+        if type == "player":
+            self.z = -1.05
+        else:
+            self.z = -1
 
         self.playername = "demon"
-        self.facing = "right"
+        self.facing = facing
         self.animManager = AnimationManager(self, self.playername, number_frames)
         self.physics = Physics(self)
-        self.currentAnim = self.animManager.animations["Idle"]["right"]
+        self.currentAnim = self.animManager.animations["Idle"][facing]
         self.currentAnim.loop()
         
 
     def update(self):
+        all_attack_collider = []
+        for e in self.enemy:
+            if e.physics.attack_collider != None:
+                all_attack_collider.append(e.physics.attack_collider)
+        for e in self.team:
+            if e.physics.attack_collider != None:
+                all_attack_collider.append(e.physics.attack_collider)
+        if self.physics.attack_collider != None:
+            all_attack_collider.append(self.physics.attack_collider)
+        self.physics.ignore = self.enemy + self.team + all_attack_collider
         self.physics.update()
-        self.animManager.update() 
+        self.animManager.update()
+        if self.hp_ui.text != "":
+            self.hp_ui.text=str(int(self.hp))

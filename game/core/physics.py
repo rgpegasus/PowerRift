@@ -2,7 +2,8 @@
 from ursina import *
 from game.core.variables import Variables
 from game.manager.input import inputManager
-from game.core.utils import JumpSmoke 
+from game.core.utils import JumpSmoke
+from game.core.attack import Attack
 class Physics:
     def __init__(self, player):
         self.player = player
@@ -24,11 +25,13 @@ class Physics:
         self.switch_facing = ""
         self.jump_side = 0
         self.can_move = True
+        self.attack_collider = None
+        self.ignore = player.enemy + player.team
         
     def collision_x(self, move_x):
         player = self.player
         player.x += move_x
-        hit_info = player.intersects()
+        hit_info = player.intersects(ignore=self.ignore)
         if hit_info.hit:
             entity = hit_info.entity
             self.slow_jump = 1
@@ -48,14 +51,13 @@ class Physics:
     def collision_y(self, move_y):
         player = self.player
         player.y += move_y
-        hit_info = player.intersects()
+        hit_info = player.intersects(ignore=self.ignore)
         if hit_info.hit :
             entity = hit_info.entity
             if entity.name != "solid":
                 self.get_off()
                 if self.isGet_off:
                     player.animManager.jump("JumpTransition")
-                
             
             self.jump_right = False
             self.jump_left = False
@@ -90,7 +92,7 @@ class Physics:
             
 
     def get_off(self):
-        if inputManager.pressed("get off"):
+        if inputManager.pressed("get off") and self.player.name == "player":
             self.isGet_off = True
             
     def jump(self):
@@ -107,7 +109,7 @@ class Physics:
                 else:
                     move_x += self.speed * self.player.speed_variation * time.dt
                 player.x += move_x
-                hit_info = player.intersects()
+                hit_info = player.intersects(ignore=self.ignore)
                 player.x = player_x
                 if hit_info.hit :
                     entity = hit_info.entity
@@ -147,14 +149,14 @@ class Physics:
                     else:
                         move_x += self.speed * self.player.speed_variation * time.dt
                     player.x += move_x
-                    hit_info_x = player.intersects()
+                    hit_info_x = player.intersects(ignore=self.ignore)
                     player.x = player_x
                     player.y += self.velocity_y
-                    hit_info_y = player.intersects()
+                    hit_info_y = player.intersects(ignore=self.ignore)
                     player.y = player_y
                     if hit_info_x.hit and hit_info_x.entity.name == "solid":
                         if not hit_info_y.hit :
-                            if "WallSlide" in player.animManager.animations and player.currentAnim != player.animManager.animations["WallSlide"][player.facing] :
+                            if "WallSlide" in player.animManager.animations and not any(anim in player.animManager.animations and player.currentAnim == player.animManager.animations[anim][player.facing] for anim in ["JumpAttack", "MainAttack", "DashAttack", "AirAttack", "WallSlide"]):
                                 player.animManager.jump("WallSlide")
                         else:
                             player.animManager.play("Idle")
@@ -162,16 +164,13 @@ class Physics:
             self.slow_jump -= self.slow_jump * time.dt * 2
             self.slow_jump = max(0.05, self.slow_jump)
 
-
-
-
     def update(self):
         player = self.player
         self.velocity_y -= self.gravity * time.dt
         if self.velocity_y < 0:
             self.velocity_y = max(self.velocity_y, -25)
         move_x = 0
-        if self.can_move :
+        if self.can_move and player.name == "player":
             if inputManager.pressed("left") and (self.mid_jump or not self.jump_right) or self.jump_left :
                 if inputManager.pressed("left") and self.mid_jump:
                     self.jump_left = False
@@ -191,5 +190,16 @@ class Physics:
             if player.y >= half_jump_y:
                 self.mid_jump = True
         self.collision_y(self.velocity_y * time.dt)
-        self.jump()
+        if player.name == "player":
+            self.jump()
+        
+        if self.is_attacking and self.attack_collider == None and player.name == "player":
+            if player.facing == "right":
+                self.attack_collider = Attack([1, 1], [player.x + player.scale_x / 4, player.y - player.scale_y / 6], player)
+            else:
+                self.attack_collider = Attack([1, 1], [player.x - player.scale_x /4, player.y - player.scale_y/6], player)
+        if not self.is_attacking:
+            if self.attack_collider != None:
+                destroy(self.attack_collider)
+            self.attack_collider = None
         
