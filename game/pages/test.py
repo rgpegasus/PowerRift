@@ -29,7 +29,7 @@ class Scene(Entity):
 
     def init_characters(self):
         self.player = Kenzo(scale=(0.6, 0.75), position=(-2, 15))
-        self.enemy = [Demon(scale=(0.6, 0.75), position=(2, 15), type="enemy", facing="left")]
+        self.enemy = [Kenzo(scale=(0.6, 0.75), position=(2, 15), type="enemy", facing="left")]
         
         self.player.enemy = self.enemy
         for e in self.enemy:

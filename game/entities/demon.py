@@ -1,5 +1,5 @@
 from ursina import *
-from game.manager.input import inputManager
+from game.manager.input import InputManager
 from game.manager.resource import resourceManager
 from game.core.physics import Physics
 from game.manager.animation import AnimationManager
@@ -30,7 +30,9 @@ class Demon(Entity):
             texture= Idle,
             **kwargs
         )
-        
+        self.inputManager = InputManager()
+        if type == "player" :
+            self.inputManager.activate = True
         self.scale_val = (0.18,0.45)
         self.scale=2.6
         self.collider = BoxCollider(self, size=Vec3(self.scale_val[0], self.scale_val[1], 1), center=(0, -0.16, 0))

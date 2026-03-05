@@ -1,7 +1,6 @@
 # C'est ma partie UwU
 from ursina import *
 from game.core.variables import Variables
-from game.manager.input import inputManager
 from game.core.utils import JumpSmoke
 from game.core.attack import Attack
 class Physics:
@@ -92,14 +91,15 @@ class Physics:
             
 
     def get_off(self):
-        if inputManager.pressed("get off") and self.player.name == "player":
+        player = self.player
+        if player.inputManager.inputs["get off"] == 2:
             self.isGet_off = True
             
     def jump(self):
         player = self.player
         player_x = player.x
         player_y = player.y
-        if inputManager.click("jump"):
+        if player.inputManager.inputs["jump"] == 1:
             self.jump_side += 1
             compte = 0
             for i in range(2):
@@ -170,15 +170,15 @@ class Physics:
         if self.velocity_y < 0:
             self.velocity_y = max(self.velocity_y, -25)
         move_x = 0
-        if self.can_move and player.name == "player":
-            if inputManager.pressed("left") and (self.mid_jump or not self.jump_right) or self.jump_left :
-                if inputManager.pressed("left") and self.mid_jump:
+        if self.can_move :
+            if player.inputManager.inputs["left"] == 2 and (self.mid_jump or not self.jump_right) or self.jump_left :
+                if player.inputManager.inputs["left"] == 2 and self.mid_jump:
                     self.jump_left = False
                     self.jump_right = False
                     self.switch_facing = ""
                 move_x -= self.speed * self.player.speed_variation * time.dt * self.slow_jump
-            if inputManager.pressed("right") and (self.mid_jump or not self.jump_left) or self.jump_right :
-                if inputManager.pressed("right") and self.mid_jump:
+            if player.inputManager.inputs["right"] == 2 and (self.mid_jump or not self.jump_left) or self.jump_right :
+                if  player.inputManager.inputs["right"] == 2 and self.mid_jump:
                     self.jump_right = False
                     self.jump_left = False
                     self.switch_facing = ""
@@ -190,10 +190,9 @@ class Physics:
             if player.y >= half_jump_y:
                 self.mid_jump = True
         self.collision_y(self.velocity_y * time.dt)
-        if player.name == "player":
-            self.jump()
+        self.jump()
         
-        if self.is_attacking and self.attack_collider == None and player.name == "player":
+        if self.is_attacking and self.attack_collider == None:
             if player.facing == "right":
                 self.attack_collider = Attack([1, 1], [player.x + player.scale_x / 4, player.y - player.scale_y / 6], player)
             else:
@@ -202,4 +201,5 @@ class Physics:
             if self.attack_collider != None:
                 destroy(self.attack_collider)
             self.attack_collider = None
+        player.inputManager.update_inputs()
         

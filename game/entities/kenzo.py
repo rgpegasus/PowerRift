@@ -1,5 +1,5 @@
 from ursina import *
-from game.manager.input import inputManager
+from game.manager.input import InputManager
 from game.manager.resource import resourceManager
 from game.manager.animation import AnimationManager
 from game.core.physics import Physics
@@ -41,6 +41,9 @@ class Kenzo(Entity):
             texture= JumpEnd,
             **kwargs
         )
+        self.inputManager = InputManager()
+        if type == "player" :
+            self.inputManager.activate = True
         self.scale_val = (0.15,0.33)
         self.scale=3.5
         self.collider = BoxCollider(self, size=Vec3(self.scale_val[0], self.scale_val[1], 1), center=(0, -0.178, 0))

@@ -26,7 +26,20 @@ class InputManager:
             "attack": ["gamepad b"],
             "play": ["gamepad start"]
         }
+        self.inputs = {
+            "left": 0,
+            "right": 0,
+            "up": 0,
+            "dash": 0,
+            "get off": 0,
+            "interact": 0,
+            "defend": 0,
+            "jump": 0,
+            "attack": 0,
+            "play": 0
+        } 
         self.prev_state = {}
+        self.activate = False
 
     def pressed(self, action):
         key = self.key.get(action)
@@ -95,14 +108,23 @@ class InputManager:
     
     def combo_pressed(self, actions):
         for action in actions:
-            if not self.pressed(action):
+            if not self.inputs[action] != 0:
                 return False
         return True
+    
     def no_input(self):
         for action in self.key:
             if self.pressed(action):
                 return False
         return True
+    
+    def update_inputs(self) :
+        if  self.activate :
+            for action in self.inputs :
+                if self.click(action) :
+                    self.inputs[action] = 1
+                elif self.pressed(action) :
+                    self.inputs[action] = 2
+                else :
+                    self.inputs[action] = 0
 
-
-inputManager = InputManager()
