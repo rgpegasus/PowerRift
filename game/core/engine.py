@@ -1,6 +1,6 @@
 # Créer la fenetre de jeu
 from ursina import *
-from .variables import Variables
+from game.core.variables import Variables
 from game.manager.page import PageManager
 
 class Engine:

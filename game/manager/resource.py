@@ -23,7 +23,16 @@ class ResourceManager:
                 if os.path.splitext(file)[0] == file_name:
                     return load_texture(os.path.join(folder_path, file).replace("\\", "/"))
         return None
-    
+
+    def button(self, key):
+        folder_path = os.path.join(self.base_path, "button", os.path.dirname(key)).replace("\\", "/")
+        file_name = os.path.basename(key)
+        if os.path.exists(folder_path):
+            for file in os.listdir(folder_path):
+                if os.path.splitext(file)[0] == file_name:
+                    return load_texture(os.path.join(folder_path, file).replace("\\", "/"))
+        return None
+        
     def effect(self, key):
         folder_path = os.path.join(self.base_path, "sounds/effects", os.path.dirname(key)).replace("\\", "/")
         file_name = os.path.basename(key)

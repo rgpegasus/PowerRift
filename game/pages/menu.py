@@ -1,31 +1,70 @@
-# Exemple de menu simple
 from ursina import *
+from game.manager.resource import resourceManager
 from game.manager.page import PageManager
+
+backgroundMap = resourceManager.picture("background/map/background")
+jouerImage = resourceManager.picture("button/jouer")
+optionImage = resourceManager.picture("button/option")
+quitterImage = resourceManager.picture("button/quitter")
+
+class MenuButton(Entity):
+    def __init__(self, texture, position=(0, 0), scale=(0.625, 0.18), action=None):
+        super().__init__(
+            parent=camera.ui,
+            model='quad',
+            texture=texture,
+            position=position,
+            scale=scale,
+            collider='box',
+            z=0
+        )
+        self.default_alpha = 1
+        self.hover_alpha = 0.6
+        self.action = action
+
+    def on_mouse_enter(self):
+        self.animate('alpha', self.hover_alpha, duration=0.1)
+
+    def on_mouse_exit(self):
+        self.animate('alpha', self.default_alpha, duration=0.1)
+
+    def input(self, key):
+        if self.hovered and key == 'left mouse down' and self.action:
+            self.action()
 
 class Scene(Entity):
     def __init__(self):
         super().__init__()
-        Text(
-            "MENU PRINCIPAL", 
-            x=-0.1, 
-            y = 0.05
-        )
-        Button(
-            "Jouer", 
-            y=-0.05, 
-            scale_x = 0.25, 
-            scale_y = 0.035, 
-            on_click=lambda: PageManager.load("test")
+
+        self.background = Entity(
+            parent=camera.ui,
+            model='quad',
+            texture=backgroundMap,
+            scale=(camera.aspect_ratio, 1),
+            position=(0, 0),
+            z=1
         )
 
-#C'est Ilyan ! Pour celui qui fait les menus, il peut inclure ça dans son code pour le relier au mien (le networking) :
+        button_scale = (0.625, 0.18)
+        spacing = 0.18
 
+        self.jouer = MenuButton(
+            texture=jouerImage,
+            position=(0, spacing),
+            scale=button_scale,
+            action=lambda: PageManager.load("jouer_menu")
+        )
 
-#from game.network.manager import network_manager # Importe le networking
+        self.option = MenuButton(
+            texture=optionImage,
+            position=(0, 0),
+            scale=button_scale,
+            action=lambda: print("Options")
+        )
 
-#def on_host_button_click():
-    #network_manager.start_host() # Quand t'appui sur le bouton host
-
-#def on_join_button_click():
-    #ip = input_field.text
-    #network_manager.join_server(ip) # Quan dt'appuie sur le bouton "rejoindre"
+        self.quitter = MenuButton(
+            texture=quitterImage,
+            position=(0, -spacing),
+            scale=button_scale,
+            action=application.quit
+        )
