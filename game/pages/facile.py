@@ -2,6 +2,7 @@ from ursina import *
 from game.entities.demon import Demon
 from game.entities.kenzo import Kenzo
 from game.manager.resource import resourceManager
+from game.core.AI import AI
 backgroundMap = resourceManager.picture("background/map/background")
 platformMap = resourceManager.picture("background/map/platform")
 
@@ -29,7 +30,9 @@ class Scene(Entity):
 
     def init_characters(self):
         self.player = Kenzo(scale=(0.6, 0.75), position=(-2, 15))
-        self.enemy = [Kenzo(scale=(0.6, 0.75), position=(2, 15), type="enemy", facing="left")]
+        en = Kenzo(scale=(0.6, 0.75), position=(2, 15), type="enemy", facing="left")
+        en.ai = AI(en, level = 1)
+        self.enemy = [en]
         
         self.player.enemy = self.enemy
         for e in self.enemy:
@@ -47,3 +50,6 @@ class Scene(Entity):
                 self.player.position=(0, 10)
                 self.player.physics.velocity_y = 0
                 self.player.velocity_y = 0
+            for e in self.enemy:
+                if e.ai != None:
+                    e.ai.update()
