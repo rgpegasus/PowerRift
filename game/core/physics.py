@@ -3,10 +3,10 @@ from ursina import *
 from game.core.variables import Variables
 from game.core.utils import JumpSmoke
 from game.core.attack import Attack
+
 class Physics:
     def __init__(self, player):
         self.player = player
-        self.player
         self.gravity = Variables.GRAVITY
         self.jump_force = Variables.JUMP_FORCE
         self.isGet_off = False
@@ -18,6 +18,7 @@ class Physics:
         self.slow_jump = 1
         self.remaining_jump = Variables.MAX_JUMP 
         self.velocity_y = 0
+        self.velocity_x = 0
         self.jump_smoke = JumpSmoke(self.player)
         self.speed = Variables.PLAYER_SPEED
         self.is_attacking = False
@@ -25,19 +26,57 @@ class Physics:
         self.jump_side = 0
         self.can_move = True
         self.attack_collider = None
+        self.knockback = Vec3(0,0,0)
         self.ignore = player.enemy + player.team
-        
+        self.timer = 0
+    
+    def is_knockback(self):
+        if self.knockback != Vec3(0, 0, 0):
+            self.player.inputManager.activate_input = False
+            if self.timer < 0.5:
+                self.velocity_x = self.knockback[0]
+                if self.knockback[1] != 0:
+                    self.velocity_y = self.knockback[1]
+                self.timer += time.dt
+            else:
+                self.player.inputManager.activate_input = True
+                if abs(self.knockback[1]) <= 0.1:
+                    self.knockback[1] = 0
+                else:
+                    if self.knockback[1] > 0:
+                        self.knockback[1] -= (time.dt * self.gravity)
+                    # elif self.knockback[1] < -self.gravity:
+                    #     self.knockback[1] += (time.dt * 10)
+                    else:
+                        self.knockback[1] = 0
+                if self.knockback[1] != 0:
+                    self.velocity_y = self.knockback[1]
+                if abs(self.knockback[0]) <= 0.1:
+                    self.knockback[0] = 0
+                else:
+                    if self.knockback[0] > 0:
+                        self.knockback[0] -= (time.dt * 10)
+                    elif self.knockback[0] < 0:
+                        self.knockback[0] += (time.dt * 10)
+                self.velocity_x = self.knockback[0]
+        else:
+            self.timer = 0
+                
+
     def collision_x(self, move_x):
         player = self.player
-        player.x += move_x
+        if self.velocity_x == 0:
+            player.x += move_x
+        else:
+            player.x += self.velocity_x * time.dt
         hit_info = player.intersects(ignore=self.ignore)
         if hit_info.hit:
             entity = hit_info.entity
             self.slow_jump = 1
-            if move_x > 0 and entity.name == "solid":  
+            if ((self.velocity_x == 0 and move_x > 0) or self.velocity_x > 0) and entity.name == "solid":  
                 left_entity = entity.x - entity.scale_x/2
                 player.x = left_entity - player.scale_val[0] * player.scale_x/2 - 0.001
-            elif move_x <= 0 and entity.name == "solid":
+            elif ((self.velocity_x == 0 and move_x <= 0) or self.velocity_x <= 0) and entity.name == "solid":
                 right_entity = entity.x + entity.scale_x/2
                 player.x = right_entity + player.scale_val[0] * player.scale_x/2 + 0.001
             if self.velocity_y < 0 and not self.isGet_off and not self.crossing or entity.name == 'solid':
@@ -51,7 +90,8 @@ class Physics:
         player = self.player
         player.y += move_y
         hit_info = player.intersects(ignore=self.ignore)
-        if hit_info.hit :
+        if hit_info.hit:
+            # self.knockback = Vec3(0,0,0)
             entity = hit_info.entity
             if entity.name != "solid":
                 self.get_off()
@@ -151,7 +191,7 @@ class Physics:
                     player.x += move_x
                     hit_info_x = player.intersects(ignore=self.ignore)
                     player.x = player_x
-                    player.y += self.velocity_y
+                    player.y += self.velocity_y * time.dt
                     hit_info_y = player.intersects(ignore=self.ignore)
                     player.y = player_y
                     if hit_info_x.hit and hit_info_x.entity.name == "solid":
@@ -166,9 +206,11 @@ class Physics:
 
     def update(self):
         player = self.player
-        self.velocity_y -= self.gravity * time.dt
-        if self.velocity_y < 0:
-            self.velocity_y = max(self.velocity_y, -25)
+        self.is_knockback()
+        if self.knockback[1] == 0:
+            self.velocity_y -= self.gravity * time.dt
+            if self.velocity_y < 0:
+                self.velocity_y = max(self.velocity_y, -25)
         move_x = 0
         if self.can_move :
             if player.inputManager.inputs["left"] == 2 and (self.mid_jump or not self.jump_right) or self.jump_left :

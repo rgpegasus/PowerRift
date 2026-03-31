@@ -43,9 +43,9 @@ class AnimationManager:
 
         
 
-    def play(self, name, type = "loop", new_facing = ""):
-        if name in self.animations:
-            player = self.player
+    def play(self, name, type="loop", new_facing=""):
+        player = self.player
+        if name in self.animations :
             anim = self.animations[name][player.facing]
             if player.currentAnim != anim:
                 player.currentAnim = anim
@@ -82,7 +82,7 @@ class AnimationManager:
                     if any(anim in self.animations and player.currentAnim == self.animations[anim][direction] for anim in ["JumpStart", "JumpTransition", "JumpEnd"]):
                         player.facing = direction
                         return
-                    elif player.physics.can_move and not player.physics.is_attacking and not player.physics.crossing and not player.physics.isGet_off :
+                    elif player.physics.can_move and not player.physics.is_attacking and not player.physics.crossing and not player.physics.isGet_off and player.inputManager.activate_input:
                         player.facing = direction
                         self.play("Run", "loop")
                         # player.inputManager.inputs["dash"] == 2:
@@ -97,31 +97,32 @@ class AnimationManager:
                 
 
     def attack(self, player):
-        # if "WallSlide" in self.animations and player.currentAnim != self.animations["WallSlide"][player.facing] :
-        if not any(anim in self.animations and player.currentAnim == self.animations[anim][player.facing] for anim in ["JumpAttack", "MainAttack", "DashAttack", "AirAttack", "Defend"]) and (player.physics.is_attacking or not player.physics.can_move):
-            player.physics.is_attacking = False
-            player.physics.can_move = True
-        if not player.physics.is_attacking and not player.physics.isGet_off :
-            inputAttack = player.inputManager.inputs["attack"] == 1
-            if not any(anim in self.animations and player.currentAnim == self.animations[anim][player.facing] for anim in ["JumpStart", "JumpTransition", "JumpEnd", "WallSlide"]):
-                if player.inputManager.combo_pressed(["up", "attack"]) :
-                    self.play("JumpAttack", "play")
+        if player.inputManager.activate_input:
+            # if "WallSlide" in self.animations and player.currentAnim != self.animations["WallSlide"][player.facing] :
+            if not any(anim in self.animations and player.currentAnim == self.animations[anim][player.facing] for anim in ["JumpAttack", "MainAttack", "DashAttack", "AirAttack", "Defend"]) and (player.physics.is_attacking or not player.physics.can_move):
+                player.physics.is_attacking = False
+                player.physics.can_move = True
+            if not player.physics.is_attacking and not player.physics.isGet_off :
+                inputAttack = player.inputManager.inputs["attack"] == 1
+                if not any(anim in self.animations and player.currentAnim == self.animations[anim][player.facing] for anim in ["JumpStart", "JumpTransition", "JumpEnd", "WallSlide"]):
+                    if player.inputManager.combo_pressed(["up", "attack"]) :
+                        self.play("JumpAttack", "play")
+                        player.physics.is_attacking = True
+                        player.physics.can_move = False
+                    elif player.inputManager.combo_pressed(["dash", "attack"]) :
+                        self.play("DashAttack", "play")
+                        player.physics.is_attacking = True
+                        player.physics.can_move = False
+                    elif inputAttack:
+                        self.play("MainAttack", "play")
+                        player.physics.is_attacking = True
+                        player.physics.can_move = False
+                elif inputAttack :
+                    self.play("AirAttack", "play")
                     player.physics.is_attacking = True
-                    player.physics.can_move = False
-                elif player.inputManager.combo_pressed(["dash", "attack"]) :
-                    self.play("DashAttack", "play")
-                    player.physics.is_attacking = True
-                    player.physics.can_move = False
-                elif inputAttack:
-                    self.play("MainAttack", "play")
-                    player.physics.is_attacking = True
-                    player.physics.can_move = False
-            elif inputAttack :
-                self.play("AirAttack", "play")
-                player.physics.is_attacking = True
-        if player.inputManager.inputs["defend"] == 1 and not player.physics.is_attacking and not any(anim in self.animations and player.currentAnim == self.animations[anim][player.facing] for anim in ["JumpStart", "JumpTransition", "JumpEnd"]) and not player.physics.isGet_off :
-            self.play("Defend", "play")
-            player.physics.can_move = False
+            if player.inputManager.inputs["defend"] == 1 and not player.physics.is_attacking and not any(anim in self.animations and player.currentAnim == self.animations[anim][player.facing] for anim in ["JumpStart", "JumpTransition", "JumpEnd"]) and not player.physics.isGet_off :
+                self.play("Defend", "play")
+                player.physics.can_move = False
                 
 
 
@@ -131,13 +132,13 @@ class AnimationManager:
         self.walk(player)
         if player.physics.switch_facing != player.facing and player.physics.switch_facing:
             player.facing = player.physics.switch_facing
-        if player.hp < 100 :
+        if player.kokoro > 1 and player.inputManager.activate_input:
             if player.inputManager.inputs["interact"] == 1 :
                 self.play("Healing", "play")
                 player.physics.can_move = False
             if "Healing" in self.animations and self.animations["Healing"][player.facing] == player.currentAnim :
-                new_hp = player.hp + 1
-                player.hp = min(new_hp, 100)
+                new_kokoro = player.kokoro - 0.1
+                player.kokoro = max(new_kokoro, 1)
         player.currentAnim.update()
         
     

@@ -143,14 +143,21 @@ class AI:
         return {k: 0 for k in self.inputs}
 
     def apply_inputs(self, intentions):
-        for k in self.inputs:
-            if intentions.get(k, 0) > 0:
-                if self.old_inputs[k] == 0:
-                    self.inputs[k] = 1
+        if self.player.inputManager.activate_input:
+            for k in self.inputs:
+                if intentions.get(k, 0) > 0:
+                    if self.old_inputs[k] == 0:
+                        self.inputs[k] = 1
+                    else:
+                        self.inputs[k] = 2
                 else:
-                    self.inputs[k] = 2
-            else:
-                self.inputs[k] = 0
+                    self.inputs[k] = 0
+        else:
+            self.inputs = {
+                "left": 0, "right": 0, "up": 0, "dash": 0, 
+                "get off": 0, "interact": 0, "defend": 0, 
+                "jump": 0, "attack": 0, "play": 0
+            }
         self.old_inputs = self.inputs.copy()
         return self.inputs
 

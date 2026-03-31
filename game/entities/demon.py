@@ -38,7 +38,8 @@ class Demon(Entity):
         self.collider = BoxCollider(self, size=Vec3(self.scale_val[0], self.scale_val[1], 1), center=(0, -0.16, 0))
         self.collider.visible = False
         self.speed_variation = 1
-        self.hp = 100
+        self.hp = 3
+        self.kokoro = 1
         self.hp_ui = Text(
             text=str(int(self.hp)),
             parent=self,
@@ -62,6 +63,12 @@ class Demon(Entity):
         
 
     def update(self):
+        if self.inputManager.click("debug"):
+            self.collider.visible = not self.collider.visible
+            for i in range(len(self.enemy)):
+                self.enemy[i].collider.visible = not self.enemy[i].collider.visible
+            for i in range(len(self.team)):
+                self.team[i].collider.visible = not self.team[i].collider.visible
         all_attack_collider = []
         for e in self.enemy:
             if e.physics.attack_collider != None:

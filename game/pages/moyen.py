@@ -26,30 +26,62 @@ class Scene(Entity):
         camera.fov = 10
         self.player = None
         self.enemy = None
-        # self.plat_left.color = Color(0.39, 0.38, 0.15, 0.5)
+        self.entities = []
 
     def init_characters(self):
-        self.player = Kenzo(scale=(0.6, 0.75), position=(-2, 15))
+        self.player = Kenzo(scale=(0.6, 0.75), position=(-2, 15, -1))
         en = Kenzo(scale=(0.6, 0.75), position=(2, 15), type="enemy", facing="left")
         en.ai = AI(en, level = 2)
         self.enemy = [en]
-        
         self.player.enemy = self.enemy
         for e in self.enemy:
             e.enemy = [self.player] +  [x for x in self.enemy if x is not e]
     
     def update(self):
         if self.player != None:
+            if self.entities == [] and self.enemy != None:
+                for i in range(len(self.enemy)):
+                    self.entities.append((self.enemy[i], "enemy"))
+                self.entities.append((self.player, "player"))
+            if self.player.inputManager.click("debug"):
+                self.ground1.visible = not self.ground1.visible
+                self.ground2.visible = not self.ground2.visible
+                self.ground3.visible = not self.ground3.visible
+                self.plat_left.visible = not self.plat_left.visible
+                self.plat_topr.visible = not self.plat_topr.visible
+                self.plat_topm.visible = not self.plat_topm.visible
+                self.plat_right.visible = not self.plat_right.visible
+
             if self.player.x > -5 and self.player.x < 5:
                 camera.x = self.player.x
             if self.player.y > -2.5 and self.player.y <= 2.5:
                 camera.y = self.player.y
             elif self.player.y > 2.5:
                 camera.y = 2.5
-            if self.player.y <= -20 or self.player.y >= 20 or self.player.x <= -5 and self.player.x >= 5:
-                self.player.position=(0, 10)
-                self.player.physics.velocity_y = 0
-                self.player.velocity_y = 0
+            i = 0
+            while i < len(self.entities):
+                if self.entities[i][0].y <= -20 or self.entities[i][0].y >= 20 or self.entities[i][0].x <= -5 and self.entities[i][0].x >= 5:
+                    self.entities[i][0].hp -= 1
+                    if self.entities[i][0].hp > 0:
+                        self.entities[i][0].position = (0, 10)
+                        self.entities[i][0].physics.velocity_y = 0
+                        self.entities[i][0].physics.velocity_x = 0
+                        self.entities[i][0].kokoro = 1
+                        self.entities[i][0].physics.knockback = Vec3(0, 0, 0)
+                        self.entities[i][0].inputManager.activate_input = True
+                    else:
+                        if self.entities[1] == "player":
+                            self.player = None
+                            i-=1
+                        else:
+                            for y in range(len(self.enemy)):
+                                if self.enemy[y] == self.entities[i][0]:
+                                    self.enemy.pop(y)
+                                    break
+                        self.entities.pop(i)
+                        i-=1
+                i+=1
             for e in self.enemy:
                 if e.ai != None:
                     e.ai.update()
+                    

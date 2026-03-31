@@ -12,7 +12,8 @@ class InputManager:
             "defend": "right mouse",
             "jump": "space",
             "attack": "left mouse",
-            "play": "p"
+            "play": "p",
+            "debug": "F1",
         } 
         self.gamepad = {
             "left": ["gamepad dpad left"],
@@ -40,6 +41,7 @@ class InputManager:
         } 
         self.prev_state = {}
         self.activate = False
+        self.activate_input = True
 
     def pressed(self, action):
         key = self.key.get(action)
@@ -119,7 +121,7 @@ class InputManager:
         return True
     
     def update_inputs(self) :
-        if  self.activate :
+        if self.activate and self.activate_input:
             for action in self.inputs :
                 if self.click(action) :
                     self.inputs[action] = 1
