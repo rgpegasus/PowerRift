@@ -10,7 +10,7 @@ number_frames = {
     "Idle" : 10,
     "Walk" : 12,
     "Run" : 16,
-    "Dash" : 16,
+    "Dash" : 8,
     "JumpStart" : 3,
     "JumpTransition" : 3,
     "JumpEnd" : 3,
@@ -24,7 +24,8 @@ number_frames = {
     "ComboAttack" : 7,
     "JumpAttack" : 14,
     "AirAttack" : 6,
-    "DashAttack" : 6,
+    "DashAttack": 6,
+    "ThrowAttack": 7,
 
     "Defend" : 6,
     "Healing" : 15,
@@ -40,7 +41,7 @@ class Kenzo(Entity):
             name=type,
             texture= JumpEnd,
             **kwargs
-        )
+        ) 
         self.inputManager = InputManager()
         if type == "player" :
             self.inputManager.activate = True
@@ -51,6 +52,7 @@ class Kenzo(Entity):
         self.speed_variation = 1
         self.hp = 3
         self.kokoro = 1
+        self.kokoro_steal = 0
         self.isDebuging = False
         self.hp_ui = Text(
             text=str(int(self.hp)),
@@ -72,7 +74,6 @@ class Kenzo(Entity):
         self.physics = Physics(self)
         self.currentAnim = self.animManager.animations["JumpEnd"][facing]
         self.currentAnim.loop()
-        self.isSpawning = False
  
     def update(self):
         if self.inputManager.click("debug"):
@@ -97,6 +98,5 @@ class Kenzo(Entity):
         self.physics.update()
         self.animManager.update()
         if self.hp_ui.text != "":
-            self.hp_ui.text=str(int(self.hp))
-
-
+            self.hp_ui.text = str(int(self.hp))
+            

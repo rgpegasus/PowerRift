@@ -1,11 +1,11 @@
 from ursina import *
-from game.entities.demon import Demon
+from game.entities.kenzo import Kenzo
 from game.manager.resource import resourceManager
 backgroundMap = resourceManager.picture("background/map/test")
 class Scene(Entity):
     def __init__(self):
         super().__init__()
-        self.player = Demon( scale=(0.6, 0.75), position=(-2, 10))
+        self.player = Kenzo( scale=(0.6, 0.75), position=(-2, 10))
         self.ground = Entity(z=-1, name="solid", collider='box', model='quad', color= '#5d5720', scale=(20, 2), position=(0, -1))
         self.plat_left = Entity(z=-1, name="solid", texture=backgroundMap, collider='box', model='quad', color='#2f2629', scale=(3, 100), position=(-3, 50))
         self.plat_right = Entity(z=-1, name="solid",  texture=backgroundMap, collider='box', model='quad', color='#2f2629', scale=(3, 100), position=(3, 50))
