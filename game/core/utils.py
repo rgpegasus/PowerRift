@@ -1,8 +1,9 @@
 # Pour des petites fonctions réutilisées souvent
 from ursina import *
 from game.manager.resource import resourceManager
+from game.core.variables import Variables
 class Animation:
-    def __init__(self, entity, texture, nbf, fps=10, direction = 1):
+    def __init__(self, entity, texture, nbf, fps=15, direction = 1):
         self.entity = entity
         self.texture = texture
         self.number_frames = nbf
@@ -17,6 +18,7 @@ class Animation:
             self.facing = "right"
         else:
             self.facing = "left"
+        self.input = ""
 
     def loop(self):
         self.entity.texture_scale = (self.direction/self.number_frames, 1)
@@ -26,14 +28,14 @@ class Animation:
         self.timer = 0
         self.is_playing_once = False 
 
-    def play(self):
+    def play(self, input=""):
         self.entity.texture_scale = (self.direction/self.number_frames, 1)
         self.frame_index = 0
         self.texture_offset = (0 / self.number_frames, 0)
         self.entity.texture = self.texture
         self.timer = 0
-        self.is_playing_once = True 
-        self.end = False 
+        self.is_playing_once = True
+        self.end = False
 
     def update(self):
         self.timer += time.dt
@@ -48,6 +50,9 @@ class Animation:
                     self.frame_index += 1
                 else:
                     self.end = True
+                    if self.entity.name != "smoke" and self.input in self.entity.inputManager.inputs:
+                        self.entity.inputManager.inputs[self.input] = 0    
+                        self.input = ""
                     return
             else:
                 self.frame_index = (self.frame_index + 1) % self.number_frames
@@ -59,7 +64,8 @@ smoke = resourceManager.picture("smoke")
 class JumpSmoke(Entity):
     def __init__(self, player, **kwargs):
         super().__init__(
-            model="quad", 
+            model="quad",
+            name = "smoke",
             texture= smoke,
             z=-1,
             **kwargs
@@ -90,5 +96,6 @@ class JumpSmoke(Entity):
 
         self.animSmoke.play()
     def update(self):
-        self.animSmoke.update() 
+        if self.player.physics.remaining_jump != Variables.MAX_JUMP :
+            self.animSmoke.update()
       

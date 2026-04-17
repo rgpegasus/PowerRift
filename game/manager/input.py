@@ -1,4 +1,4 @@
-from ursina import mouse, held_keys
+from ursina import mouse, held_keys, time
 import keyboard
 class InputManager:
     def __init__(self):
@@ -9,6 +9,7 @@ class InputManager:
             "dash": "shift",
             "get off": "s",
             "interact": "e",
+            "throw": "a",
             "defend": "right mouse",
             "jump": "space",
             "attack": "left mouse",
@@ -22,6 +23,7 @@ class InputManager:
             "dash": ["gamepad leftstick press", "gamepad leftshoulder"],
             "get off": ["gamepad leftstick down"],
             "interact": ["gamepad y"],
+            "throw" : ["gamepad x"],
             "defend": ["gamepad rightshoulder"],
             "jump": ["gamepad a"],
             "attack": ["gamepad b"],
@@ -34,11 +36,13 @@ class InputManager:
             "dash": 0,
             "get off": 0,
             "interact": 0,
+            "throw": 0,
             "defend": 0,
             "jump": 0,
             "attack": 0,
-            "play": 0
-        } 
+            "play": 0, 
+        }
+        self.timer = {"left": 0, "right": 0}
         self.prev_state = {}
         self.activate = False
         self.activate_input = True
@@ -120,13 +124,24 @@ class InputManager:
                 return False
         return True
     
-    def update_inputs(self) :
+    def update_inputs(self):
         if self.activate and self.activate_input:
-            for action in self.inputs :
+            for action in self.inputs:
                 if self.click(action) :
                     self.inputs[action] = 1
-                elif self.pressed(action) :
+                elif self.pressed(action):
+                    for direction in ["left", "right"]:
+                        if action == direction:
+                            self.timer[direction] += time.dt
                     self.inputs[action] = 2
-                else :
+                else:
+                    for direction in ["left", "right"]:
+                        if action == direction:
+                            self.timer[direction] = 0
                     self.inputs[action] = 0
+        if self.inputs["left"] == 2 and self.inputs["right"] == 2:
+            if self.timer["left"] >= self.timer["right"]:
+                self.inputs["left"] = 0
+            else:
+                self.inputs["right"] = 0
 

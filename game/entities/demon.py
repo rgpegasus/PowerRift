@@ -4,7 +4,6 @@ from game.manager.resource import resourceManager
 from game.core.physics import Physics
 from game.manager.animation import AnimationManager
 
-
 Idle = resourceManager.picture("demon/idle/basic")
 
 number_frames = {
@@ -40,6 +39,8 @@ class Demon(Entity):
         self.speed_variation = 1
         self.hp = 3
         self.kokoro = 1
+        self.kokoro_steal = 0
+        self.isDebuging = False
         self.hp_ui = Text(
             text=str(int(self.hp)),
             parent=self,
@@ -64,10 +65,13 @@ class Demon(Entity):
 
     def update(self):
         if self.inputManager.click("debug"):
+            self.isDebuging = not self.isDebuging
             self.collider.visible = not self.collider.visible
             for i in range(len(self.enemy)):
+                self.enemy[i].isDebuging = not self.enemy[i].isDebuging 
                 self.enemy[i].collider.visible = not self.enemy[i].collider.visible
             for i in range(len(self.team)):
+                self.team[i].isDebuging = not self.team[i].isDebuging 
                 self.team[i].collider.visible = not self.team[i].collider.visible
         all_attack_collider = []
         for e in self.enemy:

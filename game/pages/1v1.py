@@ -33,7 +33,7 @@ class Scene(Entity):
         
         self.player.enemy = self.enemy
         for e in self.enemy:
-            e.enemy = [self.player] +  [x for x in self.enemy if x is not e]
+            e.enemy = [self.player] + [x for x in self.enemy if x is not e]
     
     def update(self):
         if self.player != None:
