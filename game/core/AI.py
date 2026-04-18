@@ -6,23 +6,33 @@ FIGHT_RANGE_X  = 2.5   # distance x pour attaquer
 FIGHT_RANGE_Y  = 2.0   # distance y pour attaquer
 CEIL_CHECK     = 3.0   # distance raycast plafond
 CEIL_BLOCK_MAX = 0.5   # durée max bloqué par plafond
+SPAWN_PROTECT  = 2.0   # spawn clean
 
 class AI:
     def __init__(self, player, level=1):
         self.type   = "AI"
         self.player = player
         self.level  = level
+
         self.inputs = {k: 0 for k in
                        ["left", "right", "up", "dash", "get off",
                         "interact", "defend", "jump", "attack", "play"]}
         self.old_inputs = self.inputs.copy()
-        self.data = {}
+
+        self.data             = {}
         self.timer            = 0
         self.delay            = {1: 0.5, 2: 0.18, 3: 0.08}.get(level, 0.5)
+
         self.defend_cooldown  = 0.0
         self.punish_window    = 0.0
-        self.ceil_blocked_t   = 0.0    # temps bloqué par plafond
-        self.recovering       = False  # flag actif pendant recover
+        self.ceil_blocked_t   = 0.0
+        self.recovering       = False
+
+        self._needs_jump      = False  
+        self._fight_recoil_t  = 0.0   
+        self._solids          = None   
+        self._spawn_timer     = SPAWN_PROTECT  
+
         self.my_platform      = None
         self.target_platform  = None
 
@@ -35,25 +45,26 @@ class AI:
         self.data["jumps"]  = phy.remaining_jump
         self.data["kokoro"] = p.kokoro
 
-        pos = Vec3(p.x, p.y, 0)
+        pos    = Vec3(p.x, p.y, -1)
         ignore = [p] + p.team + p.enemy
-        self.data["void_c"] = not raycast(pos,  Vec3(0,-1,0), 5, ignore=ignore).hit
+
+        self.data["void_c"] = not raycast(pos,                     Vec3(0,-1,0), 5, ignore=ignore).hit
         self.data["void_l"] = not raycast(pos + Vec3(-0.8,-0.5,0), Vec3(0,-1,0), 3, ignore=ignore).hit
         self.data["void_r"] = not raycast(pos + Vec3( 0.8,-0.5,0), Vec3(0,-1,0), 3, ignore=ignore).hit
         self.data["safe"]   = not self.data["void_c"]
 
-        ceil_hit  = raycast(pos, Vec3(0, 1, 0), CEIL_CHECK, ignore=ignore)
-        hit_below = raycast(pos, Vec3(0,-1,0), 2, ignore=ignore)
+        # Plafond : on ne compte que les "solid", pas les plateformes traversables
+        ceil_hit          = raycast(pos, Vec3(0, 1, 0), CEIL_CHECK, ignore=ignore)
+        self.data["ceil"] = ceil_hit.hit and getattr(ceil_hit.entity, "name", "") == "solid"
 
-        self.data["ceil"] = ceil_hit.hit
-        self.my_platform  = hit_below.entity if hit_below.hit else None
-       
+        hit_below        = raycast(pos, Vec3(0,-1,0), 2, ignore=ignore)
+        self.my_platform = hit_below.entity if hit_below.hit else None
+
         target = self.player.enemy[0] if self.player.enemy else None
         if target is not None:
             t = target
             self.data["dx"] = t.x - p.x
             self.data["dy"] = t.y - p.y
-
             self.data["target_kokoro"] = t.kokoro
             self.data["target_vel_x"]  = t.physics.velocity_x
             self.data["target_vel_y"]  = t.physics.velocity_y
@@ -61,7 +72,7 @@ class AI:
 
             if self.level == 3 and not self.data["target_safe"]:
                 pred_x, pred_y = self.predict_landing(t)
-                hit_t = raycast(Vec3(pred_x, pred_y, 0), Vec3(0,-1,0), 3, ignore=ignore)
+                hit_t = raycast(Vec3(pred_x, pred_y, -1), Vec3(0,-1,0), 3, ignore=ignore)
             else:
                 hit_t = raycast(t.position, Vec3(0,-1,0), 3, ignore=ignore)
             self.target_platform = hit_t.entity if hit_t.hit else None
@@ -87,7 +98,7 @@ class AI:
         return {k: 0 for k in self.inputs}
 
     def is_over_void(self, entity):
-        origin = Vec3(entity.x, entity.y, -1)   
+        origin = Vec3(entity.x, entity.y, -1)
         return not raycast(origin, Vec3(0, -1, 0), 8, ignore=[entity]).hit
 
     def predict_landing(self, target):
@@ -95,24 +106,27 @@ class AI:
         vel_y = target.physics.velocity_y
         if vel_y >= 0:
             return target.x, target.y
-        # t_land ≈ vel_y / gravity (approximation)
         t_land = abs(vel_y) / Variables.GRAVITY
         return target.x + target.physics.velocity_x * t_land, target.y + vel_y * t_land
 
     def nearest_solid(self):
-        """Retourne la plateforme solid la plus proche."""
-        best = None
+        """Retourne la plateforme solid la plus proche.
+        La liste est mise en cache à la première utilisation car les plateformes sont statiques."""
+        if self._solids is None:
+            self._solids = [e for e in scene.entities if getattr(e, "name", "") == "solid"]
+        best      = None
         best_dist = float("inf")
-        for e in scene.entities:
-            if getattr(e, "name", "") == "solid":
-                dist = abs(e.x - self.player.x) + abs(e.y - self.player.y)
-                if dist < best_dist:
-                    best_dist = dist
-                    best = e
+        for e in self._solids:
+            dist = abs(e.x - self.player.x) + abs(e.y - self.player.y)
+            if dist < best_dist:
+                best_dist = dist
+                best      = e
         return best
 
     def is_danger(self):
-        """Chute imminente — priorité absolue."""
+        """Chute imminente — priorité absolue. Ignoré pendant le spawn."""
+        if self._spawn_timer > 0:
+            return False
         if self.level == 1:
             return self.data["void_c"]
         return self.data["void_c"] and self.data["vel_y"] < 0
@@ -126,7 +140,7 @@ class AI:
         """
         self.recovering       = True
         intentions            = self.empty()
-        intentions["get off"] = 0   
+        intentions["get off"] = 0
 
         vel_y = self.data["vel_y"]
         jumps = self.data["jumps"]
@@ -141,11 +155,11 @@ class AI:
 
         if vel_y < -1 and jumps > 0:
             if not self.data["ceil"]:
-                intentions["jump"] = 1
+                self._needs_jump = True
             else:
                 self.ceil_blocked_t += time.dt
                 if self.ceil_blocked_t > CEIL_BLOCK_MAX:
-                    intentions["jump"] = 1
+                    self._needs_jump    = True
                     self.ceil_blocked_t = 0
         else:
             self.ceil_blocked_t = 0
@@ -173,17 +187,13 @@ class AI:
     def chase(self):
         """
         Se déplacer vers la plateforme de la cible.
-
-        Itinéraire :
           - Cible en dessous (dy < -2) : get off hold + avancer en x
-              get off est coupé dès que dy >= -2 (cible remontée ou même niveau)
-          - Cible au-dessus (dy > 2) : avancer en x + sauter
-              vérifie plafond avant de sauter
-          - Même niveau : approche directe
+          - Cible au-dessus (dy > 2)   : avancer en x + sauter
+          - Même niveau                : approche directe
         """
         intentions = self.empty()
-        dx = self.data["dx"]
-        dy = self.data["dy"]
+        dx    = self.data["dx"]
+        dy    = self.data["dy"]
         jumps = self.data["jumps"]
 
         # Cible en dessous
@@ -211,7 +221,7 @@ class AI:
             elif jumps > 0:
                 self.ceil_blocked_t += time.dt
                 if self.ceil_blocked_t > CEIL_BLOCK_MAX:
-                    intentions["jump"] = 1
+                    intentions["jump"]  = 1
                     self.ceil_blocked_t = 0
 
         # Même niveau
@@ -240,7 +250,10 @@ class AI:
         target_kokoro = self.data["target_kokoro"]
 
         # Défense
-        if self.data["target_attacking"] and abs(dx) < FIGHT_RANGE_X and self.data["safe"]:
+        if (self.data["target_attacking"]
+                and abs(dx) < FIGHT_RANGE_X
+                and abs(dy) < FIGHT_RANGE_Y
+                and self.data["safe"]):
             if self.level == 3 and self.defend_cooldown <= 0:
                 self.defend_cooldown = random.uniform(0.4, 0.7)
                 self.punish_window   = 0.4
@@ -256,17 +269,36 @@ class AI:
             intentions["attack"] = 1
             return intentions
 
-        # Recul tactique si trop près (N2/N3)
-        if abs(dx) < 1.2 and self.data["safe"] and self.level >= 2:
+        # Recul tactique si trop près (N2/N3) 
+        if abs(dx) < 1.2 and self.data["safe"] and self.level >= 2 and self._fight_recoil_t <= 0:
             if dx > 0 and not self.data["void_l"]:
-                intentions["left"] = 2
+                intentions["left"]   = 2
+                self._fight_recoil_t = 0.3
             elif dx < 0 and not self.data["void_r"]:
-                intentions["right"] = 2
+                intentions["right"]  = 2
+                self._fight_recoil_t = 0.3
 
         # Attaque
         if abs(dx) < FIGHT_RANGE_X and abs(dy) < FIGHT_RANGE_Y:
-            if not self.data["safe"]:
+            if self.level == 1:
                 intentions["attack"] = 1
+
+            elif self.level == 2:
+                intentions["attack"] = 1
+
+            elif self.level == 3:
+                if not self.data["safe"]:
+                    # Dans le vide : attaque directe
+                    intentions["attack"] = 1
+                elif target_kokoro >= 2.5 and target_void:
+                    # Cible fragilisée dans le vide : up+attack pour éjecter
+                    intentions["up"]     = 2
+                    intentions["attack"] = 1
+                elif self.data["target_defend_end"]:
+                    # Fin de défense adverse : punir immédiatement
+                    intentions["attack"] = 1
+                else:
+                    intentions["attack"] = 1
 
         return intentions
 
@@ -274,13 +306,13 @@ class AI:
         """
         Cible dans le vide : se repositionner avantageusement.
         N1/N2 : attendre au bord côté cible
-        N3 : peut prendre la décision de chase (à faire)
+        N3    : edgeguard actif
         """
         intentions = self.empty()
         dx = self.data["dx"]
 
         if dx > 0 and not self.data["void_r"]:
-            intentions["right"] = 2            
+            intentions["right"] = 2
         elif dx < 0 and not self.data["void_l"]:
             intentions["left"] = 2
 
@@ -296,35 +328,47 @@ class AI:
                     self.inputs[k] = 1 if self.old_inputs[k] == 0 else 2
             else:
                 self.inputs[k] = 0
+
+        if self._needs_jump:
+            if self.inputs["jump"] == 0:
+                self.old_inputs["jump"] = 0
+            else:
+                self._needs_jump = False
+
         self.old_inputs = self.inputs.copy()
 
     def update(self):
         self.perceive()
-        self.defend_cooldown = max(0.0, self.defend_cooldown - time.dt)
-        self.punish_window   = max(0.0, self.punish_window   - time.dt)
 
-        # Recover
+        self.defend_cooldown  = max(0.0, self.defend_cooldown  - time.dt)
+        self.punish_window    = max(0.0, self.punish_window    - time.dt)
+        self._fight_recoil_t  = max(0.0, self._fight_recoil_t - time.dt)
+        self._spawn_timer     = max(0.0, self._spawn_timer     - time.dt)
+
+        # Priorité absolue : RECOVER (désactivé pendant le spawn)
         if self.is_danger():
             self.apply_inputs(self.recover())
             self.timer = 0
             self.player.inputManager.inputs = self.inputs
             return
 
-        # End Recover
+        # Recover terminé
         if self.recovering and self.data["safe"]:
-            self.recovering = False
+            self.recovering     = False
             self.ceil_blocked_t = 0
-        
+            self._needs_jump    = False
+
         # Timer
         self.timer += time.dt
         if self.timer < self.delay:
             self.player.inputManager.inputs = self.inputs
             return
         self.timer = 0
+
         final = self.empty()
 
-        # Flee
-        if self.level == 2 and self.player.hp <= 1 and self.player.kokoro >= 2.0:
+        # Flee (N2 N3, HP critique)
+        if (self.level == 2 or self.level == 3) and self.player.hp <= 1 and self.player.kokoro >= 2.0:
             if random.random() < 0.35:
                 self.apply_inputs(self.flee())
                 self.player.inputManager.inputs = self.inputs
@@ -334,17 +378,14 @@ class AI:
         dy = self.data["dy"]
         in_fight_range = abs(dx) < FIGHT_RANGE_X and abs(dy) < FIGHT_RANGE_Y
 
-        # Decide
+        # Décision principale
         if self.data["target_over_void"]:
-            # Cible dans le vide : CONTROL
             final.update({k: v for k, v in self.control().items() if v != 0})
 
         elif in_fight_range:
-            # Cible à portée : FIGHT 
             final.update({k: v for k, v in self.fight().items() if v != 0})
 
         else:
-            # Cible safe et loin : CHASE + FIGHT si on arrive à portée
             chase_i = self.chase()
             fight_i = self.fight()
             final.update({k: v for k, v in chase_i.items() if v != 0})
