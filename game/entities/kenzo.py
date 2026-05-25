@@ -41,10 +41,9 @@ class Kenzo(Entity):
             name=type,
             texture= JumpEnd,
             **kwargs
-        ) 
+        )
         self.inputManager = InputManager()
-        if type == "player" :
-            self.inputManager.activate = True
+        self.type = type
         self.scale_val = (0.15,0.33)
         self.scale=3.5
         self.collider = BoxCollider(self, size=Vec3(self.scale_val[0], self.scale_val[1], 1), center=(0, -0.178, 0))
@@ -63,10 +62,6 @@ class Kenzo(Entity):
         )
         self.team = team
         self.enemy = enemy
-        if type == "player":
-            self.z = -1.05
-        else:
-            self.z = -1
 
         self.playername = "kenzo"
         self.facing = facing
@@ -74,7 +69,14 @@ class Kenzo(Entity):
         self.physics = Physics(self)
         self.currentAnim = self.animManager.animations["JumpEnd"][facing]
         self.currentAnim.loop()
- 
+        
+    def initstats(self):
+        if self.type == "player" :
+            self.inputManager.activate = True
+            self.z = -1.05
+        else:
+            self.z = -1
+            
     def update(self):
         if self.inputManager.click("debug"):
             self.isDebuging = not self.isDebuging

@@ -16,7 +16,7 @@ class AI:
 
         self.inputs = {k: 0 for k in
                        ["left", "right", "up", "dash", "get off",
-                        "interact", "defend", "jump", "attack", "play"]}
+                        "interact", "defend", "jump", "attack", "play", "throw"]}
         self.old_inputs = self.inputs.copy()
 
         self.data             = {}

@@ -72,7 +72,7 @@ class AnimationManager:
                     if any(anim in self.animations and player.currentAnim == self.animations[anim][direction] for anim in ["JumpStart", "JumpTransition", "JumpEnd"]):
                         player.facing = direction
                         return
-                    elif player.inputManager.activate_input and not player.physics.is_attacking and not player.physics.crossing and not player.physics.isGet_off and player.inputManager.activate_input:
+                    elif player.inputManager.activate_input and not player.physics.is_attacking and not player.physics.crossing and not player.physics.isGet_off and player.inputManager.inputs["jump"] == 0:
                         player.facing = direction
                         self.play("Run", "loop")
             else:
@@ -122,15 +122,13 @@ class AnimationManager:
         if player.physics.switch_facing != player.facing and player.physics.switch_facing:
             player.facing = player.physics.switch_facing
         if player.kokoro > 1 and player.inputManager.activate_input:
-            if player.inputManager.inputs["interact"] == 1 :
+            if player.inputManager.inputs["interact"] == 1 and "Healing" in self.animations and player.kokoro_steal > 0 and min(player.physics.kokoro_heal, 1) != 1:
                 self.play("Healing", "play")
                 player.inputManager.activate_input = False
-            if "Healing" in self.animations:
-                if self.animations["Healing"][player.facing] == player.currentAnim and player.kokoro_steal > 0 and max(player.physics.kokoro_heal, 1) != 1:
-                    player.physics.kokoro_heal += 0.1
-                    player.kokoro_steal -= 0.1
-                if player.currentAnim == self.animations["Healing"][player.facing] and player.currentAnim.end:
-                    player.kokoro = max(player.physics.kokoro_heal, 1)
+                player.physics.kokoro_heal += 0.1
+                player.kokoro_steal -= 0.1
+            elif player.currentAnim == self.animations["Healing"][player.facing] and player.currentAnim.end:
+                player.kokoro = max(player.kokoro - player.physics.kokoro_heal, 1)
         player.currentAnim.update()
         
     

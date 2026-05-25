@@ -37,7 +37,7 @@ class Physics:
     
     def is_knockback(self, timing = 0.5, slowing = True):
         if self.knockback != Vec3(0, 0, 0):
-            if self.surface_normal != Vec3(0, 0, 0) and self.old_surface_normal != self.surface_normal:
+            if self.surface_normal != Vec3(0, 0, 0) and self.old_surface_normal != self.surface_normal and not self.isDashing:
                 self.old_surface_normal = self.surface_normal
                 self.knockback = self.knockback - (2 * ((self.knockback[0] * self.surface_normal[0]) + (self.knockback[1] * self.surface_normal[1])) * self.surface_normal)
             
@@ -46,10 +46,10 @@ class Physics:
                 self.velocity_x = self.knockback[0]
                 if self.knockback[1] != 0:
                     self.velocity_y = self.knockback[1]
-                else:
+                elif slowing:
                     self.knockback[1] = 0.05 * (self.player.kokoro - 0.5)
                 self.timer += time.dt
-            elif slowing:
+            elif not self.isDashing:
                 self.player.inputManager.activate_input = True
                 if abs(self.knockback[1]) <= 0.1:
                     self.knockback[1] = 0
@@ -119,8 +119,6 @@ class Physics:
                         player.x = right_entity + player.scale_val[0] * player.scale_x/2 + 0.001
                     if entity.name != "attack_collider" :
                         self.surface_normal = Vec3(1, 0, 0)
-                if self.velocity_y < 0 and not self.isGet_off and not self.crossing or entity.name == 'solid':
-                    self.gravity = 3
                 if self.velocity_y >= 0:
                     self.gravity = Variables.GRAVITY
             else:
@@ -135,13 +133,11 @@ class Physics:
             entity = hit_info.entity
             if entity.name != "solid":
                 self.get_off()
-                if self.isGet_off:
-                    player.animManager.jump("JumpTransition")
-            
-            self.jump_right = False
-            self.jump_left = False
-            self.switch_facing = ""
-            self.slow_jump = 1
+            else :
+                self.jump_right = False
+                self.jump_left = False
+                self.switch_facing = ""
+                self.slow_jump = 1
             if move_y > 0:
                 if entity.name != "attack_collider" :
                     self.surface_normal = Vec3(0, -1, 0)
@@ -237,20 +233,30 @@ class Physics:
                     player.x += move_x
                     hit_info_x = player.intersects(ignore=self.ignore)
                     player.x = player_x
-                    player.y += self.velocity_y * time.dt
+                    player.y -= self.gravity * time.dt
                     hit_info_y = player.intersects(ignore=self.ignore)
                     player.y = player_y
-                    if not hit_info_x.hit and not hit_info_y.hit:
-                        self.surface_normal = Vec3(0, 0, 0)
-                        self.old_surface_normal = Vec3(0, 0, 0)
-                    if hit_info_x.hit :
+                    if hit_info_x.hit and hit_info_x.entity.name != "attack_collider" :
+                        if i == 0 :
+                            self.surface_normal = Vec3(-1, 0, 0)
+                        else:
+                            self.surface_normal = Vec3(0, 0, 0)
+                    if hit_info_x.hit:
                         for entity in hit_info_x.entities:
                             if entity.name == "solid":
                                 if not hit_info_y.hit or self.isGet_off:
-                                    if "WallSlide" in player.animManager.animations and not any(anim in player.animManager.animations and player.currentAnim == player.animManager.animations[anim][player.facing] for anim in ["JumpAttack", "MainAttack", "DashAttack", "AirAttack", "ThrowAttack"," WallSlide"]):
-                                        player.animManager.jump("WallSlide")
+                                    if not any(anim in player.animManager.animations and player.currentAnim == player.animManager.animations[anim][player.facing] for anim in ["JumpAttack", "MainAttack", "DashAttack", "AirAttack", "ThrowAttack", "WallSlide"]):
+                                        if self.surface_normal[0] == -1:
+                                            player.animManager.jump("WallSlide", "left")
+                                        else:
+                                            player.animManager.jump("WallSlide", "right")
                                 else:
                                     player.animManager.play("Idle")
+                            elif self.isGet_off :
+                                if "JumpStart" in player.animManager.animations and int(self.velocity_y) == 0 :
+                                    player.animManager.jump("JumpTransition")
+                                elif "WallSlide" in player.animManager.animations and int(self.velocity_y) < Variables.GRAVITY and player.currentAnim != player.animManager.animations["WallSlide"][player.facing] :
+                                    player.animManager.jump("JumpEnd")
         if self.velocity_y < 0 and (self.jump_left or self.jump_right):
             self.slow_jump -= self.slow_jump * time.dt * 2
             self.slow_jump = max(0.05, self.slow_jump)
@@ -293,6 +299,7 @@ class Physics:
                     self.jump_left = False
                     self.switch_facing = ""
                 move_x += self.speed * self.player.speed_variation * time.dt * self.slow_jump
+        self.jump()
         self.collision_x(move_x)
         if self.velocity_y > 0 and not self.mid_jump:
             h_max = (self.jump_force ** 2) / (2 * self.gravity) 
@@ -300,9 +307,8 @@ class Physics:
             if player.y >= half_jump_y:
                 self.mid_jump = True
         self.collision_y(self.velocity_y * time.dt)
-        self.jump()
         self.throw_shuriken()
-        if "Dash" in player.animManager.animations and player.currentAnim != player.animManager.animations["Dash"][player.facing] and self.isDashing:
+        if player.inputManager.inputs["dash"] == 0 and self.isDashing:
             self.isDashing = False
             player.inputManager.activate_input = True
         if self.is_attacking and self.attack_collider == None and not self.isGet_off:
@@ -321,4 +327,3 @@ class Physics:
                 destroy(self.attack_collider)
             self.attack_collider = None
         player.inputManager.update_inputs()
-        

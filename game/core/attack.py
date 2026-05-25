@@ -23,7 +23,7 @@ class Attack(Entity):
         if self.player.physics.isThrowing:
             self.model = "quad"
             self.texture = Shuriken
-            self.facing = self.player.facing
+        self.facing = self.player.facing
         
     def update(self):
         player = self.player
@@ -34,9 +34,11 @@ class Attack(Entity):
             else:
                 self.x -= Variables.PLAYER_SPEED * 2 * time.dt
                 self.rotation_z -= 50
+        else:
+            self.y = player.y - player.scale_y/6
             
         self.collider.visible = player.isDebuging
-        hit_info = self.intersects(ignore=[player])
+        hit_info = self.intersects(ignore=[player]+player.team)
         if hit_info.hit:
             entity = hit_info.entity
             if not self.past_state and entity.name != "attack_collider" and (entity.currentAnim != entity.animManager.animations["Defend"][entity.facing] or entity.currentAnim.end) and hit_info.entity.physics.timer == 0:
@@ -55,8 +57,3 @@ class Attack(Entity):
                 hit_info.entity.animManager.play("Hurt", "play")
             if not player.physics.is_attacking :
                 self.past_state = False
-                
-        
-
-        
-    
