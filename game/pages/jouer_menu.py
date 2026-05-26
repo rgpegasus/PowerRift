@@ -1,12 +1,18 @@
 from ursina import *
 from game.manager.resource import resourceManager
 from game.manager.page import PageManager
+from game.core.engine import engine
+import socket
 
 backgroundMap = resourceManager.picture("background/map/fond2")
 uncontreunImage = resourceManager.picture("button/1v1")
 deuxcontredeuxImage = resourceManager.picture("button/2v2")
 entrainementImage = resourceManager.picture("button/entrainement")
 retourImage = resourceManager.picture("button/retour")
+
+hostname = socket.gethostname()
+ip = socket.gethostbyname(hostname)
+
 
 class MenuButton(Entity):
     def __init__(self, texture, position=(0, 0), scale=(0.625, 0.18), action=None):
@@ -32,6 +38,7 @@ class MenuButton(Entity):
     def input(self, key):
         if self.hovered and key == 'left mouse down' and self.action:
             self.action()
+
 
 class Scene(Entity):
     def __init__(self):
@@ -74,5 +81,15 @@ class Scene(Entity):
             texture=retourImage,
             position=(-0.78, 0.43),
             scale=(0.12, 0.12),
-            action=lambda: PageManager.load("menu")
+            action=lambda: PageManager.load("server")
         )
+
+        if engine.netRole and engine.netRole.role == "host":
+            self.ip_label = Text(
+                parent=camera.ui,
+                text=ip,
+                position=(-0.23, 0.4),
+                scale=3.0,
+                color=color.white,
+                z=-1
+            )

@@ -52,7 +52,7 @@ class Scene(Entity):
             texture=jouerImage,
             position=(0, spacing),
             scale=button_scale,
-            action=lambda: PageManager.load("jouer_menu")
+            action=lambda: PageManager.load("server")
         )
 
         self.option = MenuButton(
