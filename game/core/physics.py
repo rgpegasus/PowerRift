@@ -4,6 +4,25 @@ from game.core.variables import Variables
 from game.core.utils import JumpSmoke
 from game.core.attack import Attack
 
+_sounds = {}
+
+def _play(name, pitch=1, volume=1):
+    if name not in _sounds:
+        try:
+            s = Audio(f'game/resources/sounds/music/{name}', autoplay=False, loop=False)
+            if pitch != 1:
+                s.pitch = pitch
+            _sounds[name] = s
+        except Exception:
+            _sounds[name] = None
+    s = _sounds.get(name)
+    if s:
+        try:
+            s.volume = volume
+            s.play()
+        except Exception:
+            pass
+
 class Physics:
     def __init__(self, player):
         self.player = player
@@ -34,7 +53,7 @@ class Physics:
         self.old_surface_normal = Vec3(0, 0, 0)
         self.isThrowing = False
         self.timerShuriken = 0
-    
+        
     def is_knockback(self, timing = 0.5, slowing = True):
         if self.knockback != Vec3(0, 0, 0):
             if self.surface_normal != Vec3(0, 0, 0) and self.old_surface_normal != self.surface_normal and not self.isDashing:
@@ -85,6 +104,7 @@ class Physics:
                 if not self.isThrowing and not self.is_attacking:
                     self.is_attacking = True
                     self.isThrowing = True
+                    _play("shuriken.wav")
                     player.inputManager.activate_input = False
                     player.animManager.play("ThrowAttack", "play")
                     player.animManager.animations["ThrowAttack"][player.facing].input = "throw"
@@ -141,17 +161,17 @@ class Physics:
             if move_y > 0:
                 if entity.name != "attack_collider" :
                     self.surface_normal = Vec3(0, -1, 0)
-                if entity.name == "solid":   
+                if entity.name == "solid":
                     bottom_entity = entity.y - entity.scale_y/2
                     player.y = bottom_entity - player.scale_val[1] * player.scale_y/2 - 0.001 - player.collider.center[1] * player.scale_y
                     self.velocity_y = 0
-                    
-                else:  
+
+                else:
                     self.crossing = True
-            else: 
+            else:
                 entities = hit_info.entities
                 for entity in entities:
-                    if entity.name == 'solid' or not self.isGet_off and not self.crossing:    
+                    if entity.name == 'solid' or not self.isGet_off and not self.crossing:
                         self.dash()
                         if entity.name != "attack_collider":
                             self.surface_normal = Vec3(0, 1, 0)
@@ -207,6 +227,7 @@ class Physics:
                             self.jump_left = False
                             self.switch_facing = "right"
                         player.animManager.jump("WallJump")
+                        _play('walljump.mp3')
                     self.remaining_jump = max(1,min(10 - self.jump_side, Variables.MAX_JUMP))
                 elif self.jump_left or self.jump_right :
                     if 10 - self.jump_side < Variables.MAX_JUMP:
@@ -222,8 +243,9 @@ class Physics:
                 self.remaining_jump -= 1
                 self.jump_start_y = player.y
                 self.mid_jump = False
-        else:   
-            if self.velocity_y < 0:    
+                _play('saut.wav', pitch=2, volume=0.5)
+        else:
+            if self.velocity_y < 0:
                 for i in range(2):
                     move_x = 0
                     if i == 0:
@@ -273,6 +295,7 @@ class Physics:
                     else:
                         self.knockback = Vec3(-8, 0, 0)
                     player.animManager.animations["Dash"][player.facing].input = "dash"
+                    _play('dash.mp3')
                 self.isDashing = True
 
     def update(self):
@@ -302,7 +325,7 @@ class Physics:
         self.jump()
         self.collision_x(move_x)
         if self.velocity_y > 0 and not self.mid_jump:
-            h_max = (self.jump_force ** 2) / (2 * self.gravity) 
+            h_max = (self.jump_force ** 2) / (2 * self.gravity)
             half_jump_y = self.jump_start_y + h_max / 2
             if player.y >= half_jump_y:
                 self.mid_jump = True

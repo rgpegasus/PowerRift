@@ -4,6 +4,7 @@ from game.manager.resource import resourceManager
 from game.manager.page import PageManager
 from game.network.manager import Networking
 from game.core.engine import engine
+from game.core.state import state
 
 backgroundMap = resourceManager.picture("background/map/background")
 hebergerImage = resourceManager.picture("button/heberger")
@@ -102,7 +103,10 @@ class IpOverlay(Entity):
     def _destroy(self):
         destroy(self)
 
-
+def _load_map_select(game_mode, back_page):
+    state.game_mode = game_mode
+    state.back_page = back_page
+    PageManager.load("map_select")
 class Scene(Entity):
     def __init__(self):
         super().__init__()
@@ -135,16 +139,16 @@ class Scene(Entity):
             texture=retourImage,
             position=(-0.78, 0.43),
             scale=(0.12, 0.12),
-            action=lambda: PageManager.load("menu")
+            action=lambda: PageManager.load("jouer_menu")
         )
 
     def _serverSetting(self, role):
         if role == "host":
             # La page se charge seulement quand le client est connecté au serveur local
-            engine.netRole = Networking("host", on_ready=lambda: PageManager.load("jouer_menu"))
+            engine.netRole = Networking("host", on_ready=lambda:  _load_map_select("1v1", "jouer_menu"))
         else:
             IpOverlay(on_confirm=self._connectAsClient)
 
     def _connectAsClient(self, ip):
         # La page se charge seulement quand la connexion est établie et l'id reçu
-        engine.netRole = Networking("client", ip, on_ready=lambda: PageManager.load("jouer_menu"))
+        engine.netRole = Networking("client", ip, on_ready=lambda:  _load_map_select("1v1", "jouer_menu"))

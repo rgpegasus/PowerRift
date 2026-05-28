@@ -48,7 +48,7 @@ class ResourceManager:
         if os.path.exists(folder_path):
             for file in os.listdir(folder_path):
                 if os.path.splitext(file)[0] == file_name:
-                    return Audio(os.path.join(folder_path, file).replace("\\", "/"), loop=True, volume=volume)
+                    return Audio(os.path.join(folder_path, file).replace("\\", "/"), loop=True, volume=volume, autoplay=True)
         return None
     
 resourceManager = ResourceManager()

@@ -1,7 +1,23 @@
 from game.manager.resource import resourceManager
 from game.core.utils import Animation
 import time
-from ursina import Vec3
+from ursina import Vec3, Audio
+
+_sounds = {}
+
+def _play(name):
+    if name not in _sounds:
+        try:
+            _sounds[name] = Audio(f'game/resources/sounds/music/{name}', autoplay=False, loop=False)
+        except Exception:
+            _sounds[name] = None
+    s = _sounds.get(name)
+    if s:
+        try:
+            s.play()
+        except Exception:
+            pass
+
 class AnimationManager:
     def __init__(self, player, name, number_frames):
         self.animations = {
@@ -97,6 +113,7 @@ class AnimationManager:
                         self.play("JumpAttack", "play")
                         player.physics.is_attacking = True
                         player.inputManager.activate_input = False
+                        _play('slashup.wav')
                     elif player.inputManager.combo_pressed(["dash", "attack"]) :
                         self.play("DashAttack", "play")
                         player.physics.is_attacking = True
@@ -105,13 +122,16 @@ class AnimationManager:
                         else:
                             player.physics.knockback = Vec3(-8, 0, 0)
                         player.inputManager.activate_input = False
+                        _play('slash.wav')
                     elif inputAttack:
                         self.play("MainAttack", "play")
                         player.physics.is_attacking = True
                         player.inputManager.activate_input = False
+                        _play('slash.wav')
                 elif inputAttack :
                     self.play("AirAttack", "play")
                     player.physics.is_attacking = True
+                    _play('slash.wav')
             if player.inputManager.inputs["defend"] == 1 and not player.physics.is_attacking and not any(anim in self.animations and player.currentAnim == self.animations[anim][player.facing] for anim in ["JumpStart", "JumpTransition", "JumpEnd"]) and not player.physics.isGet_off :
                 self.play("Defend", "play")
                 player.inputManager.activate_input = False
@@ -130,8 +150,3 @@ class AnimationManager:
             elif player.currentAnim == self.animations["Healing"][player.facing] and player.currentAnim.end:
                 player.kokoro = max(player.kokoro - player.physics.kokoro_heal, 1)
         player.currentAnim.update()
-        
-    
-    
-
-

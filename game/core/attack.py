@@ -3,6 +3,20 @@ from game.core.variables import Variables
 from game.manager.resource import resourceManager
 
 Shuriken = resourceManager.picture("shuriken")
+_parade_sound = None
+
+def _play_parade():
+    global _parade_sound
+    if _parade_sound is None:
+        try:
+            _parade_sound = Audio('game/resources/sounds/music/parade.wav', autoplay=False, loop=False)
+        except Exception:
+            _parade_sound = False
+    if _parade_sound:
+        try:
+            _parade_sound.play()
+        except Exception:
+            pass
 
 class Attack(Entity):
     def __init__(self, scale, position, player, **kwargs):
@@ -28,7 +42,7 @@ class Attack(Entity):
 
     def update(self):
         player = self.player
-        if player.physics.isThrowing:
+        if player.physics.isThrowing :
             if self.facing == "right":
                 self.x += Variables.PLAYER_SPEED * 2 * time.dt
                 self.rotation_z += 50

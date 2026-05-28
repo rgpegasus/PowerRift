@@ -1,39 +1,72 @@
 from ursina import mouse, held_keys, time
 import keyboard
+import json
+import os
+
+CONFIG_PATH = "game/config/keybindings.json"
+
+DEFAULT_KEYS = {
+    "left": "q",
+    "right": "d",
+    "up": "z",
+    "dash": "shift",
+    "get off": "s",
+    "interact": "e",
+    "throw": "a",
+    "defend": "right mouse",
+    "jump": "space",
+    "attack": "left mouse",
+    "play": "p",
+    "debug": "F1",
+}
+
+def load_keybindings():
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, "r") as f:
+                saved = json.load(f)
+            result = dict(DEFAULT_KEYS)
+            for k, v in saved.items():
+                if k in result:
+                    result[k] = v
+            return result
+        except Exception:
+            pass
+    return dict(DEFAULT_KEYS)
+
+def save_keybindings(bindings):
+    os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
+    with open(CONFIG_PATH, "w") as f:
+        json.dump(bindings, f, indent=2)
 
 class InputManager:
     def __init__(self):
-        self.key = {
-            "left":    "q",
-            "right":   "d",
-            "up":      "z",
-            "dash":    "shift",
-            "get off": "s",
-            "interact":"e",
-            "throw":   "a",
-            "defend":  "right mouse",
-            "jump":    "space",
-            "attack":  "left mouse",
-            "play":    "p",
-            "debug":   "F1",
-        }
+        self.key = load_keybindings()
         self.gamepad = {
-            "left":    ["gamepad dpad left"],
-            "right":   ["gamepad dpad right"],
-            "up":      ["gamepad dpad up"],
-            "dash":    ["gamepad leftstick press", "gamepad leftshoulder"],
+            "left": ["gamepad dpad left"],
+            "right": ["gamepad dpad right"],
+            "up": ["gamepad dpad up"],
+            "dash": ["gamepad leftstick press", "gamepad leftshoulder"],
             "get off": ["gamepad leftstick down"],
-            "interact":["gamepad y"],
-            "throw":   ["gamepad x"],
-            "defend":  ["gamepad rightshoulder"],
-            "jump":    ["gamepad a"],
-            "attack":  ["gamepad b"],
-            "play":    ["gamepad start"]
+            "interact": ["gamepad y"],
+            "throw" : ["gamepad x"],
+            "defend": ["gamepad rightshoulder"],
+            "jump": ["gamepad a"],
+            "attack": ["gamepad b"],
+            "play": ["gamepad start"]
         }
         self.inputs = {
-            "left": 0, "right": 0, "up": 0, "dash": 0,
-            "get off": 0, "interact": 0, "throw": 0,
-            "defend": 0, "jump": 0, "attack": 0, "play": 0,
+            "left": 0,
+            "right": 0,
+            "up": 0,
+            "dash": 0,
+            "get off": 0,
+            "interact": 0,
+            "throw": 0,
+            "defend": 0,
+            "jump": 0,
+            "attack": 0,
+            "play": 0,
         }
         self.timer = {"left": 0, "right": 0}
         self.prev_state = {}

@@ -5,8 +5,9 @@ from game.manager.page import PageManager
 from game.manager.map import MapManager
 from game.core.engine import engine
 import time
+from game.core.state import state
+from game.core.map_config import build_platforms, MAP_MUSIC
 
-backgroundMap = resourceManager.picture("background/map/background")
 platformTexture = resourceManager.picture("background/map/platform")
 
 SEND_RATE = 0.066  # ~15 Hz (66ms) — réduit la bande passante
@@ -17,24 +18,17 @@ INTERPOLATION_FACTOR = 0.8  # Plus agressif pour lissage (0.4 → 0.8)
 class Scene(Entity):
     def __init__(self):
         super().__init__()
-
+        backgroundMap = resourceManager.picture(f"background/map/{state.selected_map}")
         self.background = Entity(z=2, model='quad', texture=backgroundMap, scale=(30, 15), position=(0, 0))
-        self.platformTexture = Entity(z=1.5, model='quad', texture=platformTexture, scale=(20, 12), position=(0, 0))
-        self.platforms = [
-            Entity(z=-1, name="solid",    collider='box', model='quad', color="#2a2f26", visible=False, scale=(4.65, 1.75), position=(-3.25, -3.15)),
-            Entity(z=-1, name="solid",    collider='box', model='quad', color="#2a2f26", visible=False, scale=(4.3,  1.75), position=(4.45,  -3.15)),
-            Entity(z=-1, name="platform", collider='box', model='quad', color="#636226", visible=False, scale=(3.24, 0.65), position=(0.69,  -2.6)),
-            Entity(z=-1, name="solid",    collider='box', model='quad', color='#2f2629', visible=False, scale=(2.2,  3),    position=(-6.4,   2.2)),
-            Entity(z=-1, name="solid",    collider='box', model='quad', color='#2f2629', visible=False, scale=(6.4,  1),    position=(0,      1.7)),
-            Entity(z=-1, name="platform", collider='box', model='quad', color="#636226", visible=False, scale=(2.1,  0.65), position=(-4.25,  1.875)),
-            Entity(z=-1, name="solid",    collider='box', model='quad', color="#2f2629", visible=False, scale=(2.8,  1.15), position=(6.05,   3.9)),
-        ]
-
+        if state.selected_map == "background":
+            Entity(z=1.5, model='quad', texture=platformTexture, scale=(20, 12), position=(0, 0))
+        self.platforms = build_platforms(state.selected_map)
         self.player = Kenzo(position=(-2, 15, -1))
         self.team = []
         self.enemy = [Kenzo(position=(2, 15, -1))]
         self.play = MapManager(self)
-
+        self.map_music = None
+        self.current_map = None
         self.net = engine.netRole
         self.last_send = 0
         # Garde les inputs reçus au tick précédent pour détecter les fronts montants
@@ -140,3 +134,10 @@ class Scene(Entity):
             self._last_enemy_pos = {"x": data["x"], "y": data["y"]}
             self._last_enemy_vel = {"x": vel_x, "y": vel_y}
             break
+        music_key = MAP_MUSIC.get(state.selected_map)
+        if music_key and self.current_map != music_key:
+            if self.map_music:
+                self.map_music.stop()
+
+            self.map_music = resourceManager.music(music_key)
+            self.current_map = music_key

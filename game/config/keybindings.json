@@ -1,0 +1,14 @@
+{
+  "left": "q",
+  "right": "d",
+  "up": "z",
+  "dash": "shift",
+  "get off": "s",
+  "interact": "e",
+  "throw": "a",
+  "defend": "right mouse",
+  "jump": "space",
+  "attack": "left mouse",
+  "play": "p",
+  "debug": "F1"
+}

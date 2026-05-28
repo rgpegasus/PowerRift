@@ -1,12 +1,20 @@
 from ursina import *
 from game.manager.resource import resourceManager
 from game.manager.page import PageManager
+from game.core.state import state
 
 backgroundMap = resourceManager.picture("background/map/fond2")
 facileImage = resourceManager.picture("button/facile")
 moyenImage = resourceManager.picture("button/moyen")
 difficileImage = resourceManager.picture("button/difficile")
 retourImage = resourceManager.picture("button/retour")
+
+
+def _load_map_select(game_mode):
+    state.game_mode = game_mode
+    state.back_page = "entrainement"
+    PageManager.load("map_select")
+
 
 class MenuButton(Entity):
     def __init__(self, texture, position=(0, 0), scale=(0.625, 0.16), action=None):
@@ -52,22 +60,22 @@ class Scene(Entity):
         self.facile = MenuButton(
             texture=facileImage,
             position=(0, spacing),
-            scale=(0.7,0.14),
-            action=lambda: PageManager.load("facile")
+            scale=(0.7, 0.14),
+            action=lambda: _load_map_select("facile")
         )
 
         self.moyen = MenuButton(
             texture=moyenImage,
             position=(0, 0),
             scale=button_scale,
-            action=lambda: PageManager.load("moyen")
+            action=lambda: _load_map_select("moyen")
         )
 
         self.difficile = MenuButton(
             texture=difficileImage,
             position=(0, -spacing),
-            scale=(0.750,0.19),
-            action=lambda: PageManager.load("difficile")
+            scale=(0.750, 0.19),
+            action=lambda: _load_map_select("difficile")
         )
 
         self.retour = MenuButton(

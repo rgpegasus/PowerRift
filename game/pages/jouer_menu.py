@@ -6,12 +6,19 @@ import socket
 
 backgroundMap = resourceManager.picture("background/map/fond2")
 uncontreunImage = resourceManager.picture("button/1v1")
-deuxcontredeuxImage = resourceManager.picture("button/2v2")
 entrainementImage = resourceManager.picture("button/entrainement")
 retourImage = resourceManager.picture("button/retour")
 
-hostname = socket.gethostname()
-ip = socket.gethostbyname(hostname)
+def get_local_ip():
+    """Retourne l'IP LAN réelle (même interface que ipconfig)."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except Exception:
+        return "127.0.0.1"
+    finally:
+        s.close()
 
 
 class MenuButton(Entity):
@@ -40,6 +47,9 @@ class MenuButton(Entity):
             self.action()
 
 
+
+
+
 class Scene(Entity):
     def __init__(self):
         super().__init__()
@@ -54,20 +64,13 @@ class Scene(Entity):
         )
 
         button_scale = (0.625, 0.18)
-        spacing = 0.18
+        spacing = 0.13
 
         self.uncontreun = MenuButton(
             texture=uncontreunImage,
             position=(0, spacing),
             scale=(0.775, 0.16),
-            action=lambda: PageManager.load("1v1")
-        )
-
-        self.deuxcontredeux = MenuButton(
-            texture=deuxcontredeuxImage,
-            position=(0, 0),
-            scale=button_scale,
-            action=lambda: PageManager.load("2v2")
+            action=lambda: PageManager.load("server")
         )
 
         self.entrainement = MenuButton(
@@ -81,13 +84,13 @@ class Scene(Entity):
             texture=retourImage,
             position=(-0.78, 0.43),
             scale=(0.12, 0.12),
-            action=lambda: PageManager.load("server")
+            action=lambda: PageManager.load("menu")
         )
 
         if engine.netRole and engine.netRole.role == "host":
             self.ip_label = Text(
                 parent=camera.ui,
-                text=ip,
+                text=get_local_ip(),
                 position=(-0.23, 0.4),
                 scale=3.0,
                 color=color.white,
