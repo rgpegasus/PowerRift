@@ -5,6 +5,7 @@ from game.manager.page import PageManager
 from game.network.manager import Networking
 from game.core.engine import engine
 from game.core.state import state
+import socket
 
 backgroundMap = resourceManager.picture("background/map/background")
 hebergerImage = resourceManager.picture("button/heberger")
@@ -37,6 +38,16 @@ class MenuButton(Entity):
         if self.hovered and key == 'left mouse down' and self.action:
             self.action()
 
+def get_local_ip():
+    """Retourne l'IP LAN réelle (même interface que ipconfig)."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except Exception:
+        return "127.0.0.1"
+    finally:
+        s.close()
 
 class IpOverlay(Entity):
     def __init__(self, on_confirm):
@@ -103,12 +114,9 @@ class IpOverlay(Entity):
     def _destroy(self):
         destroy(self)
 
-def _load_map_select(game_mode, back_page):
-    state.game_mode = game_mode
-    state.back_page = back_page
-    PageManager.load("map_select")
 class Scene(Entity):
     def __init__(self):
+        global _client_just_connected
         super().__init__()
 
         self.background = Entity(
@@ -123,32 +131,119 @@ class Scene(Entity):
         button_scale = (0.625, 0.18)
         spacing = 0.13
 
-        self.heberger = MenuButton(
-            texture=hebergerImage,
-            position=(0, spacing),
-            scale=button_scale,
-            action=lambda: self._serverSetting("host")
-        )
-        self.rejoindre = MenuButton(
-            texture=rejoindreImage,
-            position=(0, -spacing),
-            scale=button_scale,
-            action=lambda: self._serverSetting("client")
-        )
-        self.retour = MenuButton(
-            texture=retourImage,
-            position=(-0.78, 0.43),
-            scale=(0.12, 0.12),
-            action=lambda: PageManager.load("jouer_menu")
-        )
+        if engine.netRole and engine.netRole.role == "client":
+            self.status_text = Text(
+                parent=camera.ui,
+                text="Connecté au serveur\nEn attente du choix de map du host...",
+                origin=(0, 0),
+                position=(0, 0),
+                scale=1.5,
+                color=color.yellow,
+                z=-1
+            )
+            self.retour = MenuButton(
+                texture=retourImage,
+                position=(-0.78, 0.43),
+                scale=(0.12, 0.12),
+                action=lambda: PageManager.load("jouer_menu")
+            )
+            self.heberger = None
+            self.rejoindre = None
+            
+        elif engine.netRole and engine.netRole.role == "host":
+            self.ip_label = Text(
+                parent=camera.ui,
+                text=get_local_ip(),
+                position=(-0.23, 0.4),
+                scale=3.0,
+                color=color.white,
+                z=-1
+            )
+            
+            # Vérifier le nombre RÉEL de clients connectés au serveur
+            num_clients = len(engine.netRole.host.clients) if engine.netRole.host else 0
+            
+            if num_clients > 0:
+                status_msg = "Client connecté!\nClique pour choisir une map"
+                btn_enabled = True
+            else:
+                status_msg = "Serveur créé\nEn attente d'un client..."
+                btn_enabled = False
+            
+            self.status_text = Text(
+                parent=camera.ui,
+                text=status_msg,
+                origin=(0, 0),
+                position=(0, 0),
+                scale=1.5,
+                color=color.yellow,
+                z=-1
+            )
+            
+            self.continuer_btn = Button(
+                parent=camera.ui,
+                text='Choisir une map',
+                color=color.dark_gray,
+                scale=(button_scale[0] * 0.8, button_scale[1] * 0.6),
+                position=(0, -spacing),
+                z=0,
+                on_click=lambda: self._go_to_map_select()
+            )
+            self.continuer_btn.enabled = btn_enabled
+            
+            self.retour = MenuButton(
+                texture=retourImage,
+                position=(-0.78, 0.43),
+                scale=(0.12, 0.12),
+                action=lambda: PageManager.load("jouer_menu")
+            )
+            self.heberger = None
+            self.rejoindre = None
+            
+            # Ne pas créer un nouveau Networking s'il existe déjà (créé par _serverSetting)
+            # Il sera créé par _serverSetting avant le rechargement de la page
+            
+        else:
+            self.heberger = MenuButton(
+                texture=hebergerImage,
+                position=(0, spacing),
+                scale=button_scale,
+                action=lambda: self._serverSetting("host")
+            )
+            self.rejoindre = MenuButton(
+                texture=rejoindreImage,
+                position=(0, -spacing),
+                scale=button_scale,
+                action=lambda: self._serverSetting("client")
+            )
+            self.retour = MenuButton(
+                texture=retourImage,
+                position=(-0.78, 0.43),
+                scale=(0.12, 0.12),
+                action=lambda: PageManager.load("jouer_menu")
+            )
+            self.status_text = None
+            self.continuer_btn = None
 
     def _serverSetting(self, role):
         if role == "host":
-            # La page se charge seulement quand le client est connecté au serveur local
-            engine.netRole = Networking("host", on_ready=lambda:  _load_map_select("1v1", "jouer_menu"))
+            engine.netRole = Networking(
+                "host",
+                on_client_connected=lambda: PageManager.load("server")
+            )
+            PageManager.load("server")
         else:
             IpOverlay(on_confirm=self._connectAsClient)
 
     def _connectAsClient(self, ip):
-        # La page se charge seulement quand la connexion est établie et l'id reçu
-        engine.netRole = Networking("client", ip, on_ready=lambda:  _load_map_select("1v1", "jouer_menu"))
+        state.game_mode = "1v1"
+        state.back_page = "jouer_menu"
+        engine.netRole = Networking("client", ip)
+        PageManager.load("server")
+
+    def _go_to_map_select(self):
+        state.game_mode = "1v1"
+        state.back_page = "jouer_menu"
+        PageManager.load("map_select")
+
+

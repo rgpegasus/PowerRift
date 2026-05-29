@@ -2,6 +2,7 @@ from ursina import *
 from game.manager.resource import resourceManager
 from game.manager.page import PageManager
 from game.core.state import state
+from game.core.engine import engine
 
 _bgImg   = resourceManager.picture("background/map/background")
 _map1Img = resourceManager.picture("background/map/background")
@@ -15,8 +16,7 @@ MAPS = [
     ("map3",       _map3Img),
 ]
 
-
-_BORDER = 0.014   # épaisseur de la bordure
+_BORDER = 0.014
 
 class MapCard(Entity):
     def __init__(self, map_name, texture, x, on_select):
@@ -71,7 +71,7 @@ class MapCard(Entity):
 
     def input(self, key):
         if self._alive and self.hovered and key == 'left mouse down':
-            self._alive = False   # empêche on_mouse_exit de crasher après destroy
+            self._alive = False
             self.on_select(self.map_name)
 
 
@@ -87,26 +87,66 @@ class Scene(Entity):
             z=1,
         )
 
-        xs = [-0.52, 0.0, 0.52]
-        self.cards = []
-        for i, (map_name, tex) in enumerate(MAPS):
-            card = MapCard(map_name, tex, xs[i], self._select_map)
-            self.cards.append(card)
+        is_host = engine.netRole and engine.netRole.role == "host"
 
-        self.retour = Entity(
-            parent=camera.ui,
-            model='quad',
-            texture=_retourImg,
-            position=(-0.78, 0.43),
-            scale=(0.12, 0.12),
-            collider='box',
-            z=0,
-        )
+        if is_host:
+            xs = [-0.52, 0.0, 0.52]
+            self.cards = []
+            for i, (map_name, tex) in enumerate(MAPS):
+                card = MapCard(map_name, tex, xs[i], self._select_map)
+                self.cards.append(card)
+
+            self.retour = Entity(
+                parent=camera.ui,
+                model='quad',
+                texture=_retourImg,
+                position=(-0.78, 0.43),
+                scale=(0.12, 0.12),
+                collider='box',
+                z=0,
+            )
+            self.waiting_text = None
+
+        else:
+            self.waiting_text = Text(
+                parent=camera.ui,
+                text="En attente du choix de map du host...",
+                origin=(0, 0),
+                position=(0, 0),
+                scale=2,
+                color=color.white,
+                z=-1
+            )
+            self.cards = []
+            self.retour = None
 
     def _select_map(self, map_name):
+        if not (engine.netRole and engine.netRole.role == "host"):
+            return
+
         state.selected_map = map_name
-        PageManager.load(state.game_mode)
+
+        # Détruire les cartes et afficher un message d'attente
+        for card in self.cards:
+            card._alive = False
+            destroy(card._border)
+            destroy(card)
+        self.cards = []
+
+        self.waiting_text = Text(
+            parent=camera.ui,
+            text="En attente que le client charge la map...",
+            origin=(0, 0),
+            position=(0, 0),
+            scale=2,
+            color=color.yellow,
+            z=-1
+        )
+
+        # Le host charge le jeu UNIQUEMENT après avoir reçu l'ACK du client
+        engine.netRole.on_ready = lambda: PageManager.load(state.game_mode)
+        engine.netRole.send_map_selection(map_name)
 
     def input(self, key):
-        if key == 'left mouse down' and self.retour.hovered:
+        if key == 'left mouse down' and self.retour and self.retour.hovered:
             PageManager.load(state.back_page)

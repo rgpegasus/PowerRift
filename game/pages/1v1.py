@@ -48,6 +48,7 @@ class Scene(Entity):
             else:
                 self.player.position = (2, 15, -1)
                 self.enemy[0].position = (-2, 15, -1)
+                self.net.confirm_map_ready()
 
     def _apply_enemy_inputs(self, enemy, received):
         """
@@ -87,6 +88,7 @@ class Scene(Entity):
                 "facing": self.player.facing,
                 "x":      self.player.x,
                 "y":      self.player.y,
+                "kokoro": self.player.kokoro,  # Envoyer les PV à chaque frame
             })
             self.last_send = now
 
@@ -103,6 +105,9 @@ class Scene(Entity):
         my_id = self.net.my_id
         for player_id, data in self.net.ennemis.items():
             if my_id is not None and player_id == my_id:
+                continue
+            # Vérifier que l'ennemi existe encore (peut être None si mort)
+            if not self.enemy or len(self.enemy) == 0:
                 continue
             enemy = self.enemy[0]
 

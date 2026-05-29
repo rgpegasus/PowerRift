@@ -2,23 +2,11 @@ from ursina import *
 from game.manager.resource import resourceManager
 from game.manager.page import PageManager
 from game.core.engine import engine
-import socket
-
 backgroundMap = resourceManager.picture("background/map/fond2")
 uncontreunImage = resourceManager.picture("button/1v1")
 entrainementImage = resourceManager.picture("button/entrainement")
 retourImage = resourceManager.picture("button/retour")
 
-def get_local_ip():
-    """Retourne l'IP LAN réelle (même interface que ipconfig)."""
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(("8.8.8.8", 80))
-        return s.getsockname()[0]
-    except Exception:
-        return "127.0.0.1"
-    finally:
-        s.close()
 
 
 class MenuButton(Entity):
@@ -87,12 +75,4 @@ class Scene(Entity):
             action=lambda: PageManager.load("menu")
         )
 
-        if engine.netRole and engine.netRole.role == "host":
-            self.ip_label = Text(
-                parent=camera.ui,
-                text=get_local_ip(),
-                position=(-0.23, 0.4),
-                scale=3.0,
-                color=color.white,
-                z=-1
-            )
+
