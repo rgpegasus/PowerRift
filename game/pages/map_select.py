@@ -87,9 +87,24 @@ class Scene(Entity):
             z=1,
         )
 
-        is_host = engine.netRole and engine.netRole.role == "host"
+        is_client = engine.netRole and engine.netRole.role == "client"
 
-        if is_host:
+        if is_client:
+            # Client réseau : le host choisit la map, on attend
+            self.waiting_text = Text(
+                parent=camera.ui,
+                text="En attente du choix de map du host...",
+                origin=(0, 0),
+                position=(0, 0),
+                scale=2,
+                color=color.white,
+                z=-1
+            )
+            self.cards = []
+            self.retour = None
+
+        else:
+            # Host réseau OU mode solo (bot) : afficher les cartes
             xs = [-0.52, 0.0, 0.52]
             self.cards = []
             for i, (map_name, tex) in enumerate(MAPS):
@@ -107,45 +122,33 @@ class Scene(Entity):
             )
             self.waiting_text = None
 
-        else:
+    def _select_map(self, map_name):
+        state.selected_map = map_name
+
+        if engine.netRole and engine.netRole.role == "host":
+            # Mode réseau host : détruire les cartes et attendre l'ACK du client
+            for card in self.cards:
+                card._alive = False
+                destroy(card._border)
+                destroy(card)
+            self.cards = []
+
             self.waiting_text = Text(
                 parent=camera.ui,
-                text="En attente du choix de map du host...",
+                text="En attente que le client charge la map...",
                 origin=(0, 0),
                 position=(0, 0),
                 scale=2,
-                color=color.white,
+                color=color.yellow,
                 z=-1
             )
-            self.cards = []
-            self.retour = None
 
-    def _select_map(self, map_name):
-        if not (engine.netRole and engine.netRole.role == "host"):
-            return
+            engine.netRole.on_ready = lambda: PageManager.load(state.game_mode)
+            engine.netRole.send_map_selection(map_name)
 
-        state.selected_map = map_name
-
-        # Détruire les cartes et afficher un message d'attente
-        for card in self.cards:
-            card._alive = False
-            destroy(card._border)
-            destroy(card)
-        self.cards = []
-
-        self.waiting_text = Text(
-            parent=camera.ui,
-            text="En attente que le client charge la map...",
-            origin=(0, 0),
-            position=(0, 0),
-            scale=2,
-            color=color.yellow,
-            z=-1
-        )
-
-        # Le host charge le jeu UNIQUEMENT après avoir reçu l'ACK du client
-        engine.netRole.on_ready = lambda: PageManager.load(state.game_mode)
-        engine.netRole.send_map_selection(map_name)
+        else:
+            # Mode solo (bot) : charger directement
+            PageManager.load(state.game_mode)
 
     def input(self, key):
         if key == 'left mouse down' and self.retour and self.retour.hovered:

@@ -161,8 +161,7 @@ class Scene(Entity):
             )
             
             # Vérifier le nombre RÉEL de clients connectés au serveur
-            num_clients = len(engine.netRole.host.clients) if engine.netRole.host else 0
-            
+            num_clients = engine.netRole.real_client_count() 
             if num_clients > 0:
                 status_msg = "Client connecté!\nClique pour choisir une map"
                 btn_enabled = True
